@@ -1,70 +1,87 @@
-"use client"; // (1) LA ORDEN MÁGICA
+"use client";
 
-import { useState } from "react"; // (2) IMPORTAR MEMORIA
+import { useState } from "react";
 
 export default function BookingForm() {
-  // (3) EL ESTADO (LA MEMORIA A CORTO PLAZO)
-  // nombre: es la variable donde se guarda el texto.
-  // setNombre: es la función para cambiar esa variable.
   const [nombre, setNombre] = useState("");
   const [telefono, setTelefono] = useState("");
 
-  // (4) LA LÓGICA DE CONEXIÓN (INTEGRACIÓN BACKEND)
-  // Agregamos 'async' antes de los paréntesis.
-  // ¿Por qué? Porque hablar con el servidor toma tiempo (milisegundos) y no queremos congelar la pantalla.
-  // 'async' nos permite usar 'await' (esperar) dentro.
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); // 1. Detenemos la recarga automática del navegador.
+  // (1) NUEVOS ESTADOS: Para guardar lo que elija el usuario
+  const [fecha, setFecha] = useState(""); // Ej: "2026-01-26"
+  const [hora, setHora] = useState(""); // Ej: "10:00"
 
-    // 2. EMPAQUETADO DE DATOS
-    // Creamos un objeto JavaScript con la estructura EXACTA que espera tu clase Java 'Appointment'.
-    // Si los nombres no coinciden (ej: clientName vs nombreCliente), Java lo rechazará.
-    const reserva = {
-      clientName: nombre, // Valor que viene del input (useState)
-      clientPhone: telefono, // Valor que viene del input (useState)
-      clientNotes: "Reserva desde Web", // Valor fijo por ahora
-      startTime: "2026-09-20T10:00:00", // Fecha fija para prueba (luego la haremos dinámica)
-      endTime: "2026-09-20T11:00:00",
-      status: "PENDING", // El Enum que Java espera (en inglés)
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // (2) VALIDACIÓN BÁSICA: Que no manden cosas vacías
+    if (!nombre || !telefono || !fecha || !hora) {
+      alert(
+        "⚠️ Por favor completa todos los campos (Nombre, Teléfono, Fecha y Hora).",
+      );
+      return;
+    }
+
+    // (3) CONSTRUIR LA FECHA ISO-8601
+    // Java espera: "2026-01-26T10:00:00"
+    // Nosotros unimos: fecha + "T" + hora + ":00"
+    const fechaInicio = `${fecha}T${hora}:00`;
+
+    // Calculamos el fin (por defecto 1 hora después para este ejemplo)
+    // Nota: En un sistema real avanzado, esto se calcula mejor, pero para empezar:
+    // Solo duplicamos la hora de inicio como referencia o la calculamos.
+    // TRUCO: Para no complicarnos con matemáticas de horas ahora mismo,
+    // mandaremos la misma fecha pero le diremos al backend (o asumiremos) que dura 1 hora.
+    // O mejor aún: Java necesita un 'endTime'. Haremos un truco de texto simple:
+    // Si la hora es "10:00", el fin "11:00". (Esto es simplificado, luego lo haremos robusto).
+
+    // *Para no complicar el código ahora con cálculos de horas, vamos a enviar la hora de inicio
+    // y en el Backend deberíamos calcular la duración.
+    // PERO, para no tocar Java hoy, enviaremos la misma fechaInicio como fin
+    // (Java podría quejarse si inicio == fin, así que sumemos 1 hora a lo bruto en la mente del usuario
+    // o simplemente enviemos una hora hardcoded diferente SOLO para el fin por ahora
+    // para probar que la fecha de INICIO si cambia).*
+
+    // CORRECCIÓN PROFESIONAL: Vamos a usar objetos Date de JS para sumar 1 hora correctamente.
+    const start = new Date(fechaInicio);
+    const end = new Date(start.getTime() + 60 * 60 * 1000); // Sumar 1 hora (60min * 60seg * 1000ms)
+    const fechaFin = end.toISOString().slice(0, 19); // Formato simple "2026-01-26T11:00:00"
+
+    const datosParaEnviar = {
+      clientName: nombre,
+      clientPhone: telefono,
+      clientNotes: "Reserva web dinámica",
+      startTime: fechaInicio, // ¡AHORA SÍ ES DINÁMICO!
+      endTime: fechaFin, // Calculado automáticamente +1 hora
+      status: "PENDING",
     };
 
     try {
-      // 3. EL ENVÍO (FETCH)
-      // 'fetch' es como enviar un mensajero en moto.
-      // await: Le decimos al código "Espera aquí hasta que el mensajero vuelva con la respuesta".
       const respuesta = await fetch("http://localhost:9090/api/appointments", {
-        method: "POST", // Verbo HTTP: Queremos CREAR información.
-        headers: {
-          "Content-Type": "application/json", // Le avisamos a Java: "Te estoy enviando texto en formato JSON".
-        },
-        body: JSON.stringify(reserva), // Transformamos el objeto JS a texto plano (JSON) para que viaje por el cable.
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(datosParaEnviar),
       });
 
-      // 4. LA RESPUESTA
-      // Cuando el mensajero vuelve, revisamos si trae buenas noticias.
       if (respuesta.ok) {
-        alert("✅ ÉXITO: Tu cita se guardó en la Base de Datos.");
-        // Limpiamos los campos visuales para que el usuario sepa que terminó.
+        alert(`✅ ¡Cita Agendada! \nFecha: ${fecha} \nHora: ${hora}`);
         setNombre("");
         setTelefono("");
+        setFecha("");
+        setHora("");
       } else {
-        // Si Java responde con error (400 o 500), entramos aquí.
+        // (4) AQUÍ ENTRA LA LÓGICA DE "OCUPADO"
+        // Si Java devuelve 400 Bad Request, suele ser porque la fecha está ocupada (según nuestra regla).
         alert(
-          "❌ ERROR: El servidor rechazó la reserva (Revisa horarios o datos).",
+          "❌ HORARIO OCUPADO: Ya existe una cita a esa hora. Por favor intenta otra hora.",
         );
       }
     } catch (error) {
-      // 5. MANEJO DE DESASTRES
-      // Si el servidor está apagado o no hay internet, el código salta directamente aquí.
-      console.error("Error de red:", error);
-      alert(
-        "⚠️ ERROR CRÍTICO: No hay conexión con el Backend (¿Está encendido IntelliJ?).",
-      );
+      console.error(error);
+      alert("Error de conexión.");
     }
   };
 
   return (
-    // (5) LA VISTA (JSX)
     <form
       onSubmit={handleSubmit}
       className="mt-8 space-y-4 w-full max-w-md mx-auto"
@@ -75,27 +92,48 @@ export default function BookingForm() {
         <input
           type="text"
           value={nombre}
-          onChange={(e) => setNombre(e.target.value)} // (6) CAPTURAR LO QUE ESCRIBE
-          className="w-full p-3 rounded-lg bg-zinc-900 border border-zinc-800 text-white focus:outline-none focus:border-emerald-500 transition-colors"
+          onChange={(e) => setNombre(e.target.value)}
+          className="w-full p-3 rounded-lg bg-zinc-900 border border-zinc-800 text-white focus:border-emerald-500 outline-none"
           placeholder="Ej: Juan Pérez"
         />
       </div>
 
       {/* CAMPO TELÉFONO */}
       <div>
-        <label className="block text-zinc-400 text-sm mb-2">
-          Teléfono / WhatsApp
-        </label>
+        <label className="block text-zinc-400 text-sm mb-2">Teléfono</label>
         <input
           type="text"
           value={telefono}
           onChange={(e) => setTelefono(e.target.value)}
-          className="w-full p-3 rounded-lg bg-zinc-900 border border-zinc-800 text-white focus:outline-none focus:border-emerald-500 transition-colors"
+          className="w-full p-3 rounded-lg bg-zinc-900 border border-zinc-800 text-white focus:border-emerald-500 outline-none"
           placeholder="Ej: 8888-8888"
         />
       </div>
 
-      {/* BOTÓN DE ACCIÓN */}
+      {/* (5) NUEVOS CAMPOS DE FECHA Y HORA (GRID DE 2 COLUMNAS) */}
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-zinc-400 text-sm mb-2">Fecha</label>
+          <input
+            type="date"
+            value={fecha}
+            onChange={(e) => setFecha(e.target.value)}
+            className="w-full p-3 rounded-lg bg-zinc-900 border border-zinc-800 text-white focus:border-emerald-500 outline-none"
+            min="2026-01-01" // Opcional: Bloquear fechas pasadas
+          />
+        </div>
+        <div>
+          <label className="block text-zinc-400 text-sm mb-2">Hora</label>
+          <input
+            type="time"
+            value={hora}
+            onChange={(e) => setHora(e.target.value)}
+            className="w-full p-3 rounded-lg bg-zinc-900 border border-zinc-800 text-white focus:border-emerald-500 outline-none"
+            step="1800" // Saltos de 30 minutos (opcional)
+          />
+        </div>
+      </div>
+
       <button
         type="submit"
         className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-black font-bold rounded-lg transition-all"
