@@ -32,4 +32,16 @@ public class AppointmentController {
     public List<Appointment> verAgenda() {
         return appointmentService.getAllAppointments();
     }
+
+    // Endpoint para Confirmar: PUT /api/appointments/{id}/confirm
+    @PutMapping("/{id}/confirm")
+    public Appointment confirmAppointment(@PathVariable Long id) {
+        return appointmentService.confirmAppointment(id);
+    }
+
+    // Endpoint para Borrar: DELETE /api/appointments/{id}
+    @DeleteMapping("/{id}")
+    public void deleteAppointment(@PathVariable Long id) {
+        appointmentService.deleteAppointment(id);
+    }
 }

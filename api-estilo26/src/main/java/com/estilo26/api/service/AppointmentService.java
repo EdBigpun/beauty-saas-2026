@@ -41,4 +41,23 @@ public class AppointmentService {
     public List<Appointment> getAllAppointments() {
         return appointmentRepository.findAll();
     }
+
+    // Método para borrar una cita
+    public void deleteAppointment(Long id) {
+        appointmentRepository.deleteById(id);
+    }
+
+    // Método para confirmar una cita (Cambiar estado a CONFIRMED)
+    public Appointment confirmAppointment(Long id) {
+        // 1. Buscamos la cita por ID
+        Appointment appointment = appointmentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Cita no encontrada"));
+
+        // 2. Cambiamos el estado usando el Enum
+        appointment.setStatus(AppointmentStatus.CONFIRMED);
+
+        // 3. Guardamos el cambio
+        return appointmentRepository.save(appointment);
+    }
+
 }
