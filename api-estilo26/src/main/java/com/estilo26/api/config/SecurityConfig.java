@@ -40,14 +40,20 @@ public class SecurityConfig {
                     return corsConfig;
                 }))
 
-                // REGLAS DE ACCESO
+                // REGLAS DE ACCESO (Actualizadas)
                 .authorizeHttpRequests(auth -> auth
-                        // Permitimos que CUALQUIERA vea los servicios (para el formulario de reserva)
+                        // 1. Permitir ver precios (Público)
                         .requestMatchers("/api/services").permitAll()
-                        // Permitimos que CUALQUIERA agende una cita
+
+                        // 2. Permitir agendar citas (Público)
                         .requestMatchers("/api/appointments").permitAll()
-                        // ¡OJO! En el futuro, bloquearemos "/admin" solo para ADMIN
-                        .anyRequest().authenticated() // Todo lo demás requiere contraseña
+
+                        // 3. NUEVO: Permitir entrar al Login (Público)
+                        // Si no ponemos esto, nadie podría enviar su usuario/contraseña para validarse.
+                        .requestMatchers("/api/auth/login").permitAll()
+
+                        // 4. Todo lo demás (como borrar citas) requiere estar logueado
+                        .anyRequest().authenticated()
                 )
 
                 // Habilitamos Login Básico por ahora (para probar en el navegador)
