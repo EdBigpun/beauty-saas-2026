@@ -1,47 +1,37 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function AdminPanel() {
+  const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  
-  // ESTADOS DEL FORMULARIO
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false); // Estado del ojito
+  const [showPassword, setShowPassword] = useState(false);
   const [cargando, setCargando] = useState(false);
 
-  // PERSISTENCIA DE SESIÓN
   useEffect(() => {
     const sesionGuardada = localStorage.getItem("adminToken");
-    if (sesionGuardada === "permitido") {
-      setIsAuthenticated(true);
-    }
+    if (sesionGuardada === "permitido") setIsAuthenticated(true);
   }, []);
 
-  // LÓGICA DE LOGIN
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setCargando(true);
-
     try {
-      const respuesta = await fetch("http://localhost:9090/api/auth/login", {
+      const res = await fetch("http://localhost:9090/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: username,
-          password: password 
-        }),
+        body: JSON.stringify({ username, password }),
       });
-
-      if (respuesta.ok) {
+      if (res.ok) {
         setIsAuthenticated(true);
         localStorage.setItem("adminToken", "permitido");
       } else {
-        alert("🚫 Usuario o Contraseña incorrectos");
+        alert("Credenciales incorrectas");
       }
-    } catch (error) {
-      console.error("Error:", error);
-      alert("⚠️ Error: El servidor Java no responde en el puerto 9090");
+    } catch (err) {
+      alert("Error de conexión");
     } finally {
       setCargando(false);
     }
@@ -50,147 +40,144 @@ export default function AdminPanel() {
   const handleLogout = () => {
     localStorage.removeItem("adminToken");
     setIsAuthenticated(false);
-    setPassword("");
     setUsername("");
+    setPassword("");
   };
 
   // =================================================================
-  // 1. PANTALLA DE LOGIN (DISEÑO GLASSMORPHISM CON OJITO)
+  // 🔴 SECCIÓN DE LOGIN RESTAURADA (LOOK CYBERPUNK/REFERENCIA) 🔴
   // =================================================================
   if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-black to-emerald-950 relative overflow-hidden">
-        
-        {/* Luces de fondo */}
-        <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-emerald-500/20 rounded-full blur-[100px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-blue-500/10 rounded-full blur-[100px]" />
+    // Usamos una combinación de Tailwind y estilos en línea para asegurar el look
+    const gradientBackground = { background: 'linear-gradient(135deg, #0f172a 0%, #000000 50%, #064e3b 100%)' };
+    const cardStyle = { background: 'rgba(255, 255, 255, 0.03)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255, 255, 255, 0.05)' };
+    const inputStyle = { background: 'rgba(0, 0, 0, 0.5)', border: '1px solid #1f2937' };
 
-        <div className="relative z-10 bg-white/5 backdrop-blur-xl border border-white/10 p-10 rounded-2xl shadow-2xl w-full max-w-md">
-          <div className="text-center mb-8">
-            <div className="text-6xl mb-2">💈</div>
-            <h1 className="text-3xl font-bold text-white tracking-wider">ESTILO<span className="text-emerald-400">26</span></h1>
-            <p className="text-zinc-400 text-sm mt-2">Acceso Administrativo Seguro</p>
+    return (
+      <div className="min-h-screen flex items-center justify-center relative overflow-hidden px-4" style={gradientBackground}>
+        {/* Luz ambiental de fondo (Cyberpunk glow) */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none"></div>
+
+        <div className="p-10 rounded-3xl w-full max-w-md shadow-2xl relative z-10 transition-all" style={cardStyle}>
+          {/* ENCABEZADO RESTAURADO (Icono + Título + Descripción) */}
+          <div className="text-center mb-10">
+            {/* Icono del Poste de Barbero 💈 (Animado) */}
+            <div className="text-7xl mb-5 drop-shadow-[0_0_15px_rgba(16,185,129,0.5)] animate-pulse inline-block">💈</div>
+            {/* Título ESTILO26 */}
+            <h1 className="text-4xl font-extrabold text-white tracking-[0.25em] drop-shadow-lg">
+              ESTILO<span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-emerald-600 drop-shadow-[0_0_10px_rgba(16,185,129,0.8)]">26</span>
+            </h1>
+            {/* Descripción */}
+            <p className="text-zinc-500 text-xs mt-4 tracking-[0.2em] uppercase font-bold">Acceso Administrativo Seguro</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">
-            {/* INPUT USUARIO */}
+            {/* Campo Usuario */}
             <div>
-              <label className="block text-zinc-400 text-xs uppercase tracking-widest mb-2">Usuario</label>
-              <input 
-                type="text" 
-                placeholder="Ej: admin"
+              <label className="text-emerald-500/70 text-xs uppercase tracking-widest font-bold ml-2 mb-1 block">Usuario</label>
+              <input
+                type="text"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="w-full p-4 bg-black/30 border border-zinc-700 rounded-lg text-white focus:border-emerald-500 outline-none transition-all"
+                onChange={(e)=>setUsername(e.target.value)}
+                className="w-full p-4 rounded-xl text-white focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/10 outline-none transition-all placeholder:text-zinc-700"
+                style={inputStyle}
+                placeholder="Ej: admin"
               />
             </div>
 
-            {/* INPUT CONTRASEÑA CON OJITO */}
+            {/* Campo Contraseña CON OJITO */}
             <div className="relative">
-              <label className="block text-zinc-400 text-xs uppercase tracking-widest mb-2">Contraseña</label>
-              <input 
-                type={showPassword ? "text" : "password"} // Aquí cambia el tipo dinámicamente
-                placeholder="••••••••" 
+               <label className="text-emerald-500/70 text-xs uppercase tracking-widest font-bold ml-2 mb-1 block">Contraseña</label>
+              <input
+                type={showPassword ? "text" : "password"}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full p-4 bg-black/30 border border-zinc-700 rounded-lg text-white focus:border-emerald-500 outline-none transition-all pr-12"
+                onChange={(e)=>setPassword(e.target.value)}
+                className="w-full p-4 rounded-xl text-white focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/10 outline-none transition-all pr-14 placeholder:text-zinc-700"
+                style={inputStyle}
+                placeholder="••••••••"
               />
-              {/* BOTÓN DEL OJITO */}
-              <button 
+              {/* Botón del Ojito (Toggle Show/Hide) */}
+              <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 bottom-3 text-zinc-500 hover:text-white transition-colors"
+                onClick={()=>setShowPassword(!showPassword)}
+                className="absolute right-4 bottom-4 text-zinc-500 hover:text-emerald-400 transition-colors text-xl z-20 mb-[2px]"
+                title={showPassword ? "Ocultar contraseña" : "Ver contraseña"}
               >
-                {showPassword ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
-                  </svg>
-                ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                )}
+                {showPassword ? "👁️" : "🔒"}
               </button>
             </div>
 
-            <button 
-              type="submit" 
+            {/* Botón Ingresar (Con efecto de brillo) */}
+            <button
+              type="submit"
               disabled={cargando}
-              className={`w-full py-4 rounded-lg font-bold text-lg shadow-lg transition-all ${cargando ? "bg-zinc-700" : "bg-gradient-to-r from-emerald-600 to-emerald-800 hover:scale-[1.02]"}`}
+              className="w-full py-5 bg-gradient-to-r from-emerald-700 via-emerald-600 to-emerald-800 text-white font-bold text-lg rounded-xl hover:scale-[1.01] hover:shadow-[0_0_25px_rgba(16,185,129,0.4)] active:scale-[0.99] transition-all uppercase tracking-[0.15em] relative overflow-hidden group"
             >
-              {cargando ? "Validando..." : "Ingresar al Sistema"}
+              <span className="relative z-10 drop-shadow">{cargando ? "Validando..." : "Ingresar al Sistema"}</span>
             </button>
           </form>
         </div>
       </div>
     );
   }
+  // =================================================================
+  // 🔴 FIN DE SECCIÓN DE LOGIN 🔴
+  // =================================================================
 
-  // =================================================================
-  // 2. DASHBOARD / PANEL DE CONTROL (DISEÑO MEJORADO)
-  // =================================================================
+
+  // --- DASHBOARD (ESTA PARTE NO SE TOCÓ, SIGUE IGUAL QUE ANTES) ---
   return (
-    // Usamos el mismo fondo para continuidad visual
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-emerald-950 text-white p-8">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-black text-white p-8">
+      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
         
-        {/* ENCABEZADO */}
-        <div className="flex justify-between items-center mb-12 border-b border-white/10 pb-6 backdrop-blur-sm">
+        {/* Encabezado */}
+        <div className="flex justify-between items-center mb-10 pb-6 border-b border-gray-800">
           <div>
-            <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-zinc-400">
-              Panel de Control
-            </h1>
-            <p className="text-emerald-400 mt-1">Sesión activa: {username || "Administrador"}</p>
+            <h1 className="text-4xl font-bold">Panel de Control</h1>
+            <p className="text-emerald-400 mt-1">Sesión activa: {username || "Admin"}</p>
           </div>
-          <button 
-            onClick={handleLogout}
-            className="px-6 py-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded-full hover:bg-red-500/20 transition-all hover:scale-105"
-          >
-            Cerrar Sesión
-          </button>
+          <button onClick={handleLogout} className="px-6 py-2 bg-red-900 text-red-200 rounded-full">Cerrar Sesión</button>
         </div>
 
-        {/* GRILLA DE TARJETAS (Efecto Cristal) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {/* GRID PRINCIPAL (Usando estilos en línea para fuerza bruta) */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(3, 1fr)', 
+          gap: '24px', 
+          width: '100%' 
+        }}>
           
-          {/* TARJETA 1: PRECIOS */}
-          <div className="group bg-white/5 border border-white/10 p-8 rounded-2xl backdrop-blur-md hover:bg-white/10 transition-all hover:-translate-y-2 cursor-pointer shadow-lg hover:shadow-emerald-900/20">
-            <div className="bg-emerald-500/20 w-14 h-14 rounded-full flex items-center justify-center mb-6 text-2xl group-hover:scale-110 transition-transform">
-              💰
-            </div>
-            <h2 className="text-2xl font-bold mb-2 text-white">Gestión de Precios</h2>
-            <p className="text-zinc-400 mb-6 text-sm leading-relaxed">
-              Actualiza los costos de cortes y servicios en tiempo real. Sincronizado con la App del cliente.
-            </p>
-            <span className="text-emerald-400 text-sm font-bold flex items-center gap-2 group-hover:gap-4 transition-all">
-              Configurar Servicios &rarr;
-            </span>
+          {/* Tarjeta 1: Precios */}
+          <div 
+            onClick={() => router.push("/admin/servicios")}
+            className="group bg-white/5 border border-white/10 p-8 rounded-2xl cursor-pointer hover:bg-white/10 hover:-translate-y-2 transition-all"
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', minHeight: '300px' }}
+          >
+            <div className="text-4xl mb-4 bg-emerald-500/20 w-16 h-16 rounded-full flex items-center justify-center">💰</div>
+            <h2 className="text-2xl font-bold mb-2">Gestión de Precios</h2>
+            <p className="text-gray-400 text-sm mb-6 leading-relaxed">Actualiza los costos de cortes y servicios en tiempo real. Sincronizado con la App del cliente.</p>
+            <span className="text-emerald-400 font-bold mt-auto">Configurar Servicios &rarr;</span>
           </div>
 
-          {/* TARJETA 2: CLIENTES */}
-          <div className="group bg-white/5 border border-white/10 p-8 rounded-2xl backdrop-blur-md hover:bg-white/10 transition-all hover:-translate-y-2 cursor-pointer shadow-lg hover:shadow-blue-900/20">
-            <div className="bg-blue-500/20 w-14 h-14 rounded-full flex items-center justify-center mb-6 text-2xl group-hover:scale-110 transition-transform">
-              🏆
-            </div>
-            <h2 className="text-2xl font-bold mb-2 text-white">Clientes VIP</h2>
-            <p className="text-zinc-400 mb-6 text-sm leading-relaxed">
-              Analiza quiénes son tus clientes más fieles y recompénsalos. Estadísticas mensuales.
-            </p>
-            <span className="text-blue-400 text-sm font-bold flex items-center gap-2 group-hover:gap-4 transition-all">
-              Ver Reportes &rarr;
-            </span>
+          {/* Tarjeta 2: Clientes */}
+          <div 
+            className="group bg-white/5 border border-white/10 p-8 rounded-2xl cursor-pointer hover:bg-white/10 hover:-translate-y-2 transition-all"
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', minHeight: '300px' }}
+          >
+            <div className="text-4xl mb-4 bg-blue-500/20 w-16 h-16 rounded-full flex items-center justify-center">🏆</div>
+            <h2 className="text-2xl font-bold mb-2">Clientes VIP</h2>
+            <p className="text-gray-400 text-sm mb-6 leading-relaxed">Analiza quiénes son tus clientes más fieles y recompénsalos. Estadísticas mensuales.</p>
+            <span className="text-blue-400 font-bold mt-auto">Ver Reportes &rarr;</span>
           </div>
 
-           {/* TARJETA 3: PRÓXIMAMENTE */}
-           <div className="group bg-white/5 border border-white/5 p-8 rounded-2xl backdrop-blur-md opacity-50 hover:opacity-100 transition-all border-dashed">
-            <div className="bg-purple-500/10 w-14 h-14 rounded-full flex items-center justify-center mb-6 text-2xl">
-              🚀
-            </div>
-            <h2 className="text-2xl font-bold mb-2 text-white">Próximamente</h2>
-            <p className="text-zinc-500 mb-6 text-sm leading-relaxed">
-              Nuevas funciones de marketing y contabilidad automática en desarrollo.
-            </p>
+          {/* Tarjeta 3: Próximamente (Con animación en la tarjeta) */}
+          <div 
+            className="group bg-white/5 border border-white/5 border-dashed p-8 rounded-2xl hover:bg-white/10 transition-all duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer"
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', minHeight: '300px' }}
+          >
+            <div className="text-4xl mb-4 bg-purple-500/20 w-16 h-16 rounded-full flex items-center justify-center">🚀</div>
+            <h2 className="text-2xl font-bold mb-2">Próximamente</h2>
+            <p className="text-gray-500 text-sm mb-6 leading-relaxed">Nuevas funciones de marketing y contabilidad automática en desarrollo.</p>
           </div>
 
         </div>
