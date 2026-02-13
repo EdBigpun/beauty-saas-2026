@@ -1,44 +1,63 @@
 package com.estilo26.api.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
 
-@Entity // (1) Esto le dice a Java: "Convierte esta clase en una Tabla de SQL".
-@Data   // (2) Lombok: Nos ahorra escribir 100 líneas de Getters y Setters.
-@Table(name = "appointments") // (3) Nombre real de la tabla en Postgres.
+@Entity
+@Table(name = "appointments")
 public class Appointment {
 
-    @Id // Marca esto como la Llave Primaria.
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // Autoincremental (1, 2, 3...)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // FECHAS Y HORARIOS
-    // Usamos LocalDateTime porque es preciso.
-    // nullable = false significa que es OBLIGATORIO tener fecha.
-    @Column(nullable = false)
-    private LocalDateTime startTime;
-
-    @Column(nullable = false)
-    private LocalDateTime endTime;
-
-    // DATOS DEL CLIENTE (Simplificado para este MVP)
-    // En el futuro, esto podría ser una relación con una tabla de Usuarios.
-    @Column(nullable = false)
     private String clientName;
+    private String clientPhone;
 
-    @Column(nullable = false)
-    private String clientPhone; // CRÍTICO para la integración con WhatsApp.
+    private LocalDate appointmentDate; // Fecha (Ej: 2026-02-12)
+    private LocalTime appointmentTime; // Hora Inicio (Ej: 10:00)
 
-    // NEUROMARKETING & EXPERIENCIA
-    // Aquí guardamos "Prefiere café", "Alergia a productos fuertes".
-    // Esto permite al barbero leerlo ANTES de que llegue el cliente.
-    @Column(length = 500)
-    private String clientNotes;
+    // 👇👇 AQUÍ ESTABA EL FALTANTE 👇👇
+    private LocalTime endTime;         // Hora Fin (Ej: 11:00)
 
-    // ESTADO DE LA CITA
-    // Usamos un ENUM (Lista cerrada de opciones) para evitar errores de texto.
-    // Guardamos el NOMBRE del estado (String) en la BD.
-    @Enumerated(EnumType.STRING)
-    private AppointmentStatus status;
+    @ManyToMany
+    @JoinTable(
+            name = "appointment_services",
+            joinColumns = @JoinColumn(name = "appointment_id"),
+            inverseJoinColumns = @JoinColumn(name = "service_id")
+    )
+    private List<Service> services;
+
+    private String status = "PENDIENTE";
+
+    // --- CONSTRUCTOR VACÍO ---
+    public Appointment() {}
+
+    // --- GETTERS Y SETTERS (Para que Java pueda leer/escribir) ---
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public String getClientName() { return clientName; }
+    public void setClientName(String clientName) { this.clientName = clientName; }
+
+    public String getClientPhone() { return clientPhone; }
+    public void setClientPhone(String clientPhone) { this.clientPhone = clientPhone; }
+
+    public LocalDate getAppointmentDate() { return appointmentDate; }
+    public void setAppointmentDate(LocalDate appointmentDate) { this.appointmentDate = appointmentDate; }
+
+    public LocalTime getAppointmentTime() { return appointmentTime; }
+    public void setAppointmentTime(LocalTime appointmentTime) { this.appointmentTime = appointmentTime; }
+
+    // 👇 GETTER Y SETTER PARA LA HORA FIN (NUEVO) 👇
+    public LocalTime getEndTime() { return endTime; }
+    public void setEndTime(LocalTime endTime) { this.endTime = endTime; }
+
+    public List<Service> getServices() { return services; }
+    public void setServices(List<Service> services) { this.services = services; }
+
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 }

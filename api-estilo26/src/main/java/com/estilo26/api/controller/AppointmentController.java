@@ -6,42 +6,26 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
-@RestController // (1)
-@RequestMapping("/api/appointments") // (2)
-@CrossOrigin(origins = "http://localhost:3000") // (3)
+@RestController
+@RequestMapping("/api/appointments")
+@CrossOrigin(origins = "http://localhost:3000")
 public class AppointmentController {
 
-    @Autowired // (4)
-    private AppointmentService appointmentService;
+    @Autowired
+    private AppointmentService appointmentService; // Usamos el Servicio, no el Repo directo
 
-    // CAPACIDAD: AGENDAR UNA CITA
-    @PostMapping // (5)
-    public ResponseEntity<Appointment> agendarCita(@RequestBody Appointment cita) { // (6)
+    // POST: Crear nueva reserva
+    @PostMapping
+    public ResponseEntity<?> createAppointment(@RequestBody Appointment appointment) {
         try {
-            Appointment nuevaCita = appointmentService.createAppointment(cita);
-            return ResponseEntity.ok(nuevaCita); // (7)
+            // Le pasamos la 'papa caliente' al Servicio para que valide
+            Appointment nuevaCita = appointmentService.createAppointment(appointment);
+            return ResponseEntity.ok(nuevaCita);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build(); // (8)
+            // Si el servicio dice "Horario ocupado", devolvemos error 400 con el mensaje
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
         }
-    }
-
-    // CAPACIDAD: VER TODAS LAS CITAS
-    @GetMapping // (9)
-    public List<Appointment> verAgenda() {
-        return appointmentService.getAllAppointments();
-    }
-
-    // Endpoint para Confirmar: PUT /api/appointments/{id}/confirm
-    @PutMapping("/{id}/confirm")
-    public Appointment confirmAppointment(@PathVariable Long id) {
-        return appointmentService.confirmAppointment(id);
-    }
-
-    // Endpoint para Borrar: DELETE /api/appointments/{id}
-    @DeleteMapping("/{id}")
-    public void deleteAppointment(@PathVariable Long id) {
-        appointmentService.deleteAppointment(id);
     }
 }

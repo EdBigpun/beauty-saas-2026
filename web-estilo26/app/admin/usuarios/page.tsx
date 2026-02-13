@@ -76,8 +76,6 @@ export default function UsuariosPage() {
       if (res.ok) {
         const userCreated = await res.json();
         setUsers([...users, userCreated]);
-        
-        // Reset
         setNewUser("");
         setNewEmail("");
         setNewPass("");
@@ -137,11 +135,12 @@ export default function UsuariosPage() {
                       </div>
                     </div>
                     
+                    {/* AQUÍ ESTÁ EL TEXTO RESTAURADO */}
                     <p className="text-zinc-400 text-sm leading-relaxed mb-2">
                       {u.email && <span className="block text-white/50 text-xs mb-2">📧 {u.email}</span>}
                       {isAdmin 
-                        ? 'Acceso total: Configuración y usuarios.' 
-                        : 'Acceso limitado: Agenda personal.'}
+                        ? 'Acceso total: Configuración, usuarios y reportes financieros.' 
+                        : 'Acceso limitado: Ver agenda personal y marcar citas completadas.'}
                     </p>
                   </div>
 
@@ -166,15 +165,10 @@ export default function UsuariosPage() {
         )}
       </div>
 
-      {/* ======================================================== */}
-      {/* 🟢 MODAL MEJORADO (UI/UX BOOST) 🟢 */}
-      {/* ======================================================== */}
+      {/* MODAL DE CREACIÓN */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          
           <div className="bg-[#0a0a0a] border border-emerald-500/30 p-8 rounded-3xl w-full max-w-md shadow-[0_0_50px_rgba(16,185,129,0.1)] relative zoom-in-95">
-            
-            {/* Encabezado con Icono */}
             <div className="text-center mb-8">
                 <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center text-3xl mx-auto mb-4 border border-emerald-500/20 shadow-inner">
                     👤
@@ -184,59 +178,25 @@ export default function UsuariosPage() {
             </div>
 
             <form onSubmit={handleCreateUser} className="space-y-5">
-              
               <div>
                 <label className="text-emerald-400/80 text-xs uppercase tracking-widest font-bold mb-2 block ml-1">Usuario</label>
-                <input 
-                    type="text" 
-                    value={newUser} 
-                    onChange={(e) => setNewUser(e.target.value)} 
-                    className="w-full bg-zinc-900/50 border border-zinc-700 p-4 rounded-xl text-white focus:border-emerald-500 focus:bg-black transition-all outline-none text-lg placeholder:text-zinc-700" 
-                    placeholder="Ej: JuanBarbero" 
-                    required 
-                />
+                <input type="text" value={newUser} onChange={(e) => setNewUser(e.target.value)} className="w-full bg-zinc-900/50 border border-zinc-700 p-4 rounded-xl text-white focus:border-emerald-500 focus:bg-black transition-all outline-none text-lg placeholder:text-zinc-700" placeholder="Ej: JuanBarbero" required />
               </div>
-
               <div>
                 <label className="text-emerald-400/80 text-xs uppercase tracking-widest font-bold mb-2 block ml-1">Correo Electrónico</label>
-                <input 
-                    type="email" 
-                    value={newEmail} 
-                    onChange={(e) => setNewEmail(e.target.value)} 
-                    className="w-full bg-zinc-900/50 border border-zinc-700 p-4 rounded-xl text-white focus:border-emerald-500 focus:bg-black transition-all outline-none text-lg placeholder:text-zinc-700" 
-                    placeholder="juan@ejemplo.com" 
-                    required 
-                />
+                <input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} className="w-full bg-zinc-900/50 border border-zinc-700 p-4 rounded-xl text-white focus:border-emerald-500 focus:bg-black transition-all outline-none text-lg placeholder:text-zinc-700" placeholder="juan@ejemplo.com" required />
               </div>
-
               <div>
                 <label className="text-emerald-400/80 text-xs uppercase tracking-widest font-bold mb-2 block ml-1">Contraseña</label>
                 <div className="relative">
-                    <input 
-                      type={showPass ? "text" : "password"} 
-                      value={newPass} 
-                      onChange={(e) => setNewPass(e.target.value)} 
-                      className="w-full bg-zinc-900/50 border border-zinc-700 p-4 rounded-xl text-white focus:border-emerald-500 focus:bg-black transition-all outline-none pr-14 text-lg placeholder:text-zinc-700" 
-                      placeholder="••••••••" 
-                      required 
-                    />
-                    <button 
-                      type="button" 
-                      onClick={() => setShowPass(!showPass)}
-                      className="absolute right-0 top-0 h-full px-4 text-zinc-500 hover:text-white transition-colors"
-                    >
-                      {showPass ? "👁️" : "🔒"}
-                    </button>
+                    <input type={showPass ? "text" : "password"} value={newPass} onChange={(e) => setNewPass(e.target.value)} className="w-full bg-zinc-900/50 border border-zinc-700 p-4 rounded-xl text-white focus:border-emerald-500 focus:bg-black transition-all outline-none pr-14 text-lg placeholder:text-zinc-700" placeholder="••••••••" required />
+                    <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-0 top-0 h-full px-4 text-zinc-500 hover:text-white transition-colors">{showPass ? "👁️" : "🔒"}</button>
                 </div>
-                {/* LEYENDA MEJORADA */}
                 <div className="mt-2 flex gap-2 items-start bg-blue-900/20 p-2 rounded-lg border border-blue-500/20">
                     <span className="text-blue-400 text-xs">ℹ️</span>
-                    <p className="text-[11px] text-blue-200/70 leading-tight">
-                        Seguridad: Mínimo 6 caracteres, 1 mayúscula y 1 número.
-                    </p>
+                    <p className="text-[11px] text-blue-200/70 leading-tight">Seguridad: Mínimo 6 caracteres, 1 mayúscula y 1 número.</p>
                 </div>
               </div>
-
               <div>
                 <label className="text-emerald-400/80 text-xs uppercase tracking-widest font-bold mb-2 block ml-1">Rol</label>
                 <select value={newRole} onChange={(e) => setNewRole(e.target.value)} className="w-full bg-zinc-900/50 border border-zinc-700 p-4 rounded-xl text-white focus:border-emerald-500 outline-none appearance-none cursor-pointer text-lg">
@@ -244,7 +204,6 @@ export default function UsuariosPage() {
                   <option value="ADMIN">👑 Administrador (Acceso Total)</option>
                 </select>
               </div>
-
               <div className="flex gap-3 pt-4 mt-6">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-4 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl font-bold transition-colors uppercase tracking-wide text-sm">Cancelar</button>
                 <button type="submit" className="flex-1 py-4 bg-gradient-to-r from-emerald-600 to-emerald-800 hover:from-emerald-500 hover:to-emerald-700 text-white rounded-xl font-bold transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)] uppercase tracking-wide text-sm">Crear Usuario</button>
