@@ -5,6 +5,7 @@ import com.estilo26.api.model.Service;
 import com.estilo26.api.repository.AppointmentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import java.time.LocalTime;
+import java.util.List; // Importante para las listas
 
 @org.springframework.stereotype.Service
 public class AppointmentService {
@@ -12,24 +13,24 @@ public class AppointmentService {
     @Autowired
     private AppointmentRepository appointmentRepository;
 
-    public Appointment createAppointment(Appointment nuevaCita) {
+    // MÉTODO NUEVO: LEER TODAS LAS CITAS
+    public List<Appointment> getAllAppointments() {
+        return appointmentRepository.findAll();
+    }
 
-        // 1. LÓGICA DE NEGOCIO: CALCULAR HORA DE FIN
-        // Sumamos los minutos de cada servicio que eligió el cliente
+    // MÉTODO EXISTENTE: CREAR CITA (Sin cambios en la lógica)
+    public Appointment createAppointment(Appointment nuevaCita) {
+        // 1. Calcular hora fin
         int totalMinutes = nuevaCita.getServices().stream()
                 .mapToInt(Service::getDurationMinutes)
                 .sum();
+        if (totalMinutes == 0) totalMinutes = 30;
 
-        if (totalMinutes == 0) totalMinutes = 30; // Seguridad por si viene vacío
-
-        // Calculamos: Hora Inicio + Duración = Hora Fin
         LocalTime horaInicio = nuevaCita.getAppointmentTime();
         LocalTime horaFin = horaInicio.plusMinutes(totalMinutes);
-
-        // Guardamos ese dato en el modelo (Ahora sí existe el campo)
         nuevaCita.setEndTime(horaFin);
 
-        // 2. VALIDAR SI ESTÁ OCUPADO
+        // 2. Validar
         boolean ocupado = appointmentRepository.existsByAppointmentDateAndAppointmentTime(
                 nuevaCita.getAppointmentDate(),
                 nuevaCita.getAppointmentTime()
@@ -39,10 +40,8 @@ public class AppointmentService {
             throw new RuntimeException("⚠️ Ese horario ya está reservado.");
         }
 
-        // 3. ESTADO INICIAL
+        // 3. Guardar
         nuevaCita.setStatus("PENDIENTE");
-
-        // 4. GUARDAR EN LA BASE DE DATOS
         return appointmentRepository.save(nuevaCita);
     }
 }

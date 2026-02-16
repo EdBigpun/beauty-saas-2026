@@ -31,6 +31,7 @@ public class Appointment {
     private List<Service> services;
 
     private String status = "PENDIENTE";
+    private String barberName; // Nombre del profesional asignado
 
     // --- CONSTRUCTOR VACÍO ---
     public Appointment() {}
@@ -60,4 +61,8 @@ public class Appointment {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getBarberName() { return barberName; }
+    public void setBarberName(String barberName) { this.barberName = barberName; }
 }
+

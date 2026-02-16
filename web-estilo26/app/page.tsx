@@ -54,15 +54,25 @@ export default function Home() {
 
   const totalPrice = selectedServices.reduce((sum, s) => sum + s.price, 0);
 
+  // Generar Horas (8 AM - 8 PM) con intervalos de 30 minutos
   const generateTimeSlots = () => {
     const times = [];
-    for (let i = 8; i <= 20; i++) { 
+    for (let i = 8; i <= 20; i++) { // De 8 a 20 horas
       const period = i >= 12 ? 'PM' : 'AM';
       let displayHour = i > 12 ? i - 12 : i;
       if (displayHour === 0) displayHour = 12;
-      const timeString = `${i.toString().padStart(2, '0')}:00`; 
-      const label = `${displayHour}:00 ${period}`;
-      times.push({ value: timeString, label: label });
+      
+      // Hora en punto (:00)
+      const time00 = `${i.toString().padStart(2, '0')}:00`;
+      const label00 = `${displayHour}:00 ${period}`;
+      times.push({ value: time00, label: label00 });
+
+      // Media hora (:30) - Si no es las 8 PM (cierre)
+      if (i < 20) {
+        const time30 = `${i.toString().padStart(2, '0')}:30`;
+        const label30 = `${displayHour}:30 ${period}`;
+        times.push({ value: time30, label: label30 });
+      }
     }
     return times;
   };
@@ -86,6 +96,7 @@ export default function Home() {
       appointmentDate: selectedDate,
       appointmentTime: selectedTime,
       services: selectedServices,
+      barberName: getBarberName(), // <--- ¡ESTA ES LA LÍNEA NUEVA!
       status: "PENDIENTE"
     };
 
@@ -237,7 +248,14 @@ export default function Home() {
               {/* PASO 4 */}
               {step === 4 && (
                 <motion.div key="step4" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-10">
-                  <div className="w-24 h-24 bg-emerald-500 rounded-full flex items-center justify-center text-5xl mx-auto mb-6 shadow-[0_0_30px_rgba(16,185,129,0.5)]">🎉</div>
+                  {/* ICONO DE ÉXITO MEJORADO */}
+    <div className="w-28 h-28 bg-emerald-600/20 border-2 border-emerald-500 rounded-full flex items-center justify-center text-6xl mx-auto mb-8 shadow-[0_0_60px_rgba(16,185,129,0.6)] animate-pulse">
+        ✅
+    </div>
+    {/* TÍTULO CON MÁS BRILLO */}
+    <h3 className="text-5xl font-black mb-4 text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-emerald-200 to-emerald-400 tracking-tight drop-shadow-[0_0_10px_rgba(16,185,129,0.8)]">
+        ¡Reserva Exitosa!
+    </h3>
                   <h3 className="text-3xl font-bold mb-4">¡Reserva Exitosa!</h3>
                   <p className="text-zinc-400 max-w-md mx-auto mb-8">Te esperamos el <span className="text-white font-bold">{selectedDate}</span> a las <span className="text-white font-bold">{selectedTime}</span>.</p>
                   <button onClick={() => { setStep(1); setSelectedServices([]); setClientName(""); setClientPhone(""); }} className="px-8 py-4 bg-white/10 border border-white/20 rounded-xl hover:bg-white/20 transition-all font-bold">Hacer otra reserva</button>

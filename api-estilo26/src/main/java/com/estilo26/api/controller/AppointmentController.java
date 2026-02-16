@@ -5,6 +5,7 @@ import com.estilo26.api.service.AppointmentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/appointments")
@@ -12,17 +13,21 @@ import org.springframework.web.bind.annotation.*;
 public class AppointmentController {
 
     @Autowired
-    private AppointmentService appointmentService; // Usamos el Servicio, no el Repo directo
+    private AppointmentService appointmentService;
 
-    // POST: Crear nueva reserva
+    // 1. GET: VER TODAS LAS CITAS (¡Esto es lo que faltaba!)
+    @GetMapping
+    public List<Appointment> getAllAppointments() {
+        return appointmentService.getAllAppointments();
+    }
+
+    // 2. POST: CREAR CITA
     @PostMapping
     public ResponseEntity<?> createAppointment(@RequestBody Appointment appointment) {
         try {
-            // Le pasamos la 'papa caliente' al Servicio para que valide
             Appointment nuevaCita = appointmentService.createAppointment(appointment);
             return ResponseEntity.ok(nuevaCita);
         } catch (RuntimeException e) {
-            // Si el servicio dice "Horario ocupado", devolvemos error 400 con el mensaje
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
