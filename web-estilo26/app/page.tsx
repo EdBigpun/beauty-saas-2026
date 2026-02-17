@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 
+// --- INTERFACES ---
 interface Service {
   id: number;
   name: string;
@@ -19,9 +20,11 @@ interface Barber {
 export default function Home() {
   const [step, setStep] = useState(1); 
   
+  // --- DATOS ---
   const [services, setServices] = useState<Service[]>([]);
   const [barbers, setBarbers] = useState<Barber[]>([]);
   
+  // --- SELECCIÓN ---
   const [selectedServices, setSelectedServices] = useState<Service[]>([]);
   const [selectedBarber, setSelectedBarber] = useState(""); 
   const [selectedDate, setSelectedDate] = useState("");
@@ -29,6 +32,29 @@ export default function Home() {
   const [clientName, setClientName] = useState("");
   const [clientPhone, setClientPhone] = useState("");
 
+  // --- MÁQUINAS DE FORMATO (HELPERS) ---
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "";
+    const date = new Date(dateString + "T00:00:00");
+    return new Intl.DateTimeFormat("es-ES", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }).format(date);
+  };
+
+  const formatTime = (timeString: string) => {
+    if (!timeString) return "";
+    const [hours, minutes] = timeString.split(':');
+    let h = parseInt(hours);
+    const m = minutes;
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12;
+    h = h ? h : 12;
+    return `${h}:${m} ${ampm}`;
+  };
+
+  // --- CARGA INICIAL ---
   useEffect(() => {
     fetch("http://localhost:9090/api/services")
       .then((res) => res.json())
@@ -38,12 +64,13 @@ export default function Home() {
     fetch("http://localhost:9090/api/users")
       .then((res) => res.json())
       .then((data: Barber[]) => {
-        const staff = data.filter(u => u.role === 'BARBERO' || u.role === 'ADMIN');
-        setBarbers(staff);
+        const onlyBarbers = data.filter(u => u.role === 'BARBERO' || u.role === 'ADMIN');
+        setBarbers(onlyBarbers);
       })
       .catch((err) => console.error(err));
   }, []);
 
+  // --- LÓGICA ---
   const toggleService = (service: Service) => {
     if (selectedServices.find((s) => s.id === service.id)) {
       setSelectedServices(selectedServices.filter((s) => s.id !== service.id));
@@ -54,20 +81,18 @@ export default function Home() {
 
   const totalPrice = selectedServices.reduce((sum, s) => sum + s.price, 0);
 
-  // Generar Horas (8 AM - 8 PM) con intervalos de 30 minutos
+  // Generar Horas
   const generateTimeSlots = () => {
     const times = [];
-    for (let i = 8; i <= 20; i++) { // De 8 a 20 horas
+    for (let i = 8; i <= 20; i++) { 
       const period = i >= 12 ? 'PM' : 'AM';
       let displayHour = i > 12 ? i - 12 : i;
       if (displayHour === 0) displayHour = 12;
       
-      // Hora en punto (:00)
       const time00 = `${i.toString().padStart(2, '0')}:00`;
       const label00 = `${displayHour}:00 ${period}`;
       times.push({ value: time00, label: label00 });
 
-      // Media hora (:30) - Si no es las 8 PM (cierre)
       if (i < 20) {
         const time30 = `${i.toString().padStart(2, '0')}:30`;
         const label30 = `${displayHour}:30 ${period}`;
@@ -84,6 +109,7 @@ export default function Home() {
     return barber ? barber.username : "Cualquiera";
   };
 
+  // Enviar Reserva
   const handleConfirmBooking = async () => {
     if (!clientName || !clientPhone) {
       alert("⚠️ Faltan tus datos personales.");
@@ -96,7 +122,7 @@ export default function Home() {
       appointmentDate: selectedDate,
       appointmentTime: selectedTime,
       services: selectedServices,
-      barberName: getBarberName(), // <--- ¡ESTA ES LA LÍNEA NUEVA!
+      barberName: getBarberName(),
       status: "PENDIENTE"
     };
 
@@ -108,7 +134,7 @@ export default function Home() {
       });
 
       if (res.ok) {
-        setStep(4);
+        setStep(4); 
       } else {
         const errorText = await res.text();
         alert("Error del servidor: " + errorText);
@@ -119,7 +145,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white font-sans selection:bg-emerald-500/30">
+    <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-emerald-500/30">
       
       {/* NAVBAR */}
       <nav className="fixed w-full z-50 bg-black/80 backdrop-blur-md border-b border-white/5">
@@ -135,9 +161,8 @@ export default function Home() {
             {["INICIO", "SERVICIOS", "GALERÍA", "UBICACIÓN"].map((item) => (
               <a key={item} href={`#${item.toLowerCase()}`} className="hover:text-emerald-400 transition-colors tracking-widest">{item}</a>
             ))}
-            {/* AQUÍ ESTÁ EL BOTÓN ADMIN RESTAURADO */}
             <Link href="/admin" className="px-5 py-2 bg-white/5 border border-white/10 rounded-full hover:bg-emerald-500 hover:text-black hover:border-emerald-500 transition-all">
-              ADMIN
+              ADMIN LOGIN
             </Link>
           </div>
         </div>
@@ -147,18 +172,13 @@ export default function Home() {
       <section id="inicio" className="relative pt-32 pb-20 px-6 min-h-screen flex flex-col justify-center items-center">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1585747860715-2ba37e788b70?q=80&w=2074&auto=format&fit=crop')] bg-cover bg-center opacity-20 mask-image-gradient"></div>
         
-        <motion.div 
-          initial={{ opacity: 0, y: 30 }} 
-          animate={{ opacity: 1, y: 0 }} 
-          className="relative z-10 text-center max-w-4xl mx-auto mb-16"
-        >
-          {/* TEXTO RESTAURADO */}
+        {/* TÍTULO GIGANTE RESTAURADO */}
+        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="relative z-10 text-center max-w-6xl mx-auto mb-16">
           <span className="text-emerald-500 font-bold tracking-[0.3em] text-xs mb-4 block animate-pulse">ESTELÍ, NICARAGUA</span>
-          <h1 className="text-5xl md:text-8xl font-black tracking-tighter mb-6 leading-none">
+          <h1 className="text-6xl md:text-9xl font-black tracking-tighter mb-6 leading-none">
             TU ESTILO <br/> <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-600">DEFINITIVO</span>
           </h1>
-          {/* DESCRIPCIÓN LARGA RESTAURADA */}
-          <p className="text-zinc-400 text-lg md:text-xl max-w-2xl mx-auto mb-10">
+          <p className="text-zinc-400 text-lg md:text-2xl max-w-3xl mx-auto mb-10">
             Más que una barbería, somos un club de caballeros. Experiencia premium, cortes de precisión y el ambiente que mereces.
           </p>
         </motion.div>
@@ -166,31 +186,30 @@ export default function Home() {
         {/* WIDGET DE RESERVA */}
         <div className="relative z-20 w-full max-w-4xl bg-zinc-900/80 backdrop-blur-xl border border-white/10 rounded-3xl p-1 shadow-2xl overflow-hidden">
           
+          {/* HEADER DE PASOS (01. SERVICIOS...) */}
           <div className="flex border-b border-white/5 bg-black/40">
-            {[1, 2, 3].map((s) => (
-              <div key={s} className={`flex-1 py-4 text-center text-xs font-bold tracking-widest transition-all ${step >= s ? 'text-emerald-400 bg-emerald-500/5' : 'text-zinc-600'}`}>
-                PASO 0{s}
-              </div>
-            ))}
+            <div className={`flex-1 py-4 text-center text-xs font-bold tracking-widest transition-all ${step >= 1 ? 'text-emerald-400 bg-emerald-500/5' : 'text-zinc-600'}`}>01. SERVICIOS</div>
+            <div className={`flex-1 py-4 text-center text-xs font-bold tracking-widest transition-all ${step >= 2 ? 'text-emerald-400 bg-emerald-500/5' : 'text-zinc-600'}`}>02. AGENDA</div>
+            <div className={`flex-1 py-4 text-center text-xs font-bold tracking-widest transition-all ${step >= 3 ? 'text-emerald-400 bg-emerald-500/5' : 'text-zinc-600'}`}>03. CONFIRMAR</div>
           </div>
 
           <div className="p-6 md:p-10 min-h-[400px]">
             <AnimatePresence mode="wait">
               
-              {/* PASO 1 */}
+              {/* PASO 1: SERVICIOS */}
               {step === 1 && (
                 <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                  <h3 className="text-2xl font-bold mb-6">Elige tus Servicios</h3>
+                  <h3 className="text-3xl font-bold mb-8 text-white">Elige tus Servicios</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                     {services.map((service) => {
                       const isSelected = selectedServices.find(s => s.id === service.id);
                       return (
-                        <div key={service.id} onClick={() => toggleService(service)} className={`p-4 rounded-xl border cursor-pointer transition-all flex justify-between items-center ${isSelected ? 'border-emerald-500 bg-emerald-500/10' : 'border-white/10 hover:border-white/30 bg-white/5'}`}>
+                        <div key={service.id} onClick={() => toggleService(service)} className={`p-8 rounded-2xl border-2 cursor-pointer transition-all flex justify-between items-center group ${isSelected ? 'border-emerald-500 bg-emerald-500/10 scale-[1.02]' : 'border-white/10 hover:border-white/30 bg-white/5'}`}>
                           <div>
-                            <div className="font-bold">{service.name}</div>
-                            <div className="text-xs text-zinc-400">{service.durationMinutes} min</div>
+                            <div className="font-bold text-2xl mb-2 text-white">{service.name}</div>
+                            <div className="text-base text-zinc-400 font-medium group-hover:text-zinc-300 transition-colors">{service.durationMinutes} min</div>
                           </div>
-                          <div className="font-bold text-emerald-400">C$ {service.price}</div>
+                          <div className="text-3xl font-black text-emerald-400">C$ {service.price}</div>
                         </div>
                       );
                     })}
@@ -202,63 +221,118 @@ export default function Home() {
                 </motion.div>
               )}
 
-              {/* PASO 2 */}
+              {/* PASO 2: AGENDA (AQUÍ ESTÁ EL CAMBIO DE TAMAÑO) */}
               {step === 2 && (
                 <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                  <h3 className="text-2xl font-bold mb-6">Personaliza tu Cita</h3>
-                  <div className="space-y-6 mb-8">
-                    {/* SELECTOR DE BARBERO (NUEVO) */}
+                  <h3 className="text-3xl font-bold mb-8 text-white">Personaliza tu Cita</h3>
+                  
+                  <div className="space-y-8 mb-8">
+                    {/* BARBEROS - BOTONES MÁS GRANDES (p-5 y text-lg) */}
                     <div>
-                        <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase">Selecciona Profesional</label>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                            <div onClick={() => setSelectedBarber("")} className={`p-3 rounded-lg border text-center cursor-pointer text-sm font-bold ${selectedBarber === "" ? 'border-emerald-500 bg-emerald-500/20 text-white' : 'border-white/10 bg-white/5 text-zinc-400'}`}>Cualquiera</div>
+                        <label className="block text-sm font-bold text-zinc-400 mb-4 uppercase tracking-widest">Selecciona Profesional</label>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                            <div 
+                                onClick={() => setSelectedBarber("")}
+                                className={`p-5 rounded-xl border-2 text-center cursor-pointer font-bold text-lg transition-all ${selectedBarber === "" ? 'border-emerald-500 bg-emerald-500/20 text-white' : 'border-white/10 bg-white/5 text-zinc-400 hover:border-white/30 hover:text-zinc-200'}`}
+                            >
+                                Cualquiera
+                            </div>
                             {barbers.map(b => (
-                                <div key={b.id} onClick={() => setSelectedBarber(b.id.toString())} className={`p-3 rounded-lg border text-center cursor-pointer text-sm font-bold ${selectedBarber === b.id.toString() ? 'border-emerald-500 bg-emerald-500/20 text-white' : 'border-white/10 bg-white/5 text-zinc-400'}`}>{b.username}</div>
+                                <div 
+                                    key={b.id}
+                                    onClick={() => setSelectedBarber(b.id.toString())}
+                                    className={`p-5 rounded-xl border-2 text-center cursor-pointer font-bold text-lg transition-all ${selectedBarber === b.id.toString() ? 'border-emerald-500 bg-emerald-500/20 text-white' : 'border-white/10 bg-white/5 text-zinc-400 hover:border-white/30 hover:text-zinc-200'}`}
+                                >
+                                    {b.username}
+                                </div>
                             ))}
                         </div>
                     </div>
+
+                    {/* FECHA Y HORA - INPUTS MÁS GRANDES (p-5 y text-xl) */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <div><label className="block text-xs font-bold text-zinc-500 mb-2 uppercase">Fecha</label><input type="date" style={{ colorScheme: "dark" }} className="w-full bg-black border border-zinc-700 p-4 rounded-xl text-white focus:border-emerald-500 outline-none" onChange={(e) => setSelectedDate(e.target.value)} /></div>
-                      <div><label className="block text-xs font-bold text-zinc-500 mb-2 uppercase">Hora</label><select className="w-full bg-black border border-zinc-700 p-4 rounded-xl text-white focus:border-emerald-500 outline-none" onChange={(e) => setSelectedTime(e.target.value)}><option value="">Selecciona hora</option>{timeSlots.map((slot) => (<option key={slot.value} value={slot.value}>{slot.label}</option>))}</select></div>
+                      <div>
+                          <label className="block text-sm font-bold text-zinc-400 mb-4 uppercase tracking-widest">Fecha</label>
+                          <input 
+                              type="date" 
+                              style={{ colorScheme: "dark" }} 
+                              className="w-full bg-black border-2 border-zinc-800 p-5 rounded-xl text-white focus:border-emerald-500 outline-none text-xl transition-all font-bold"
+                              onChange={(e) => setSelectedDate(e.target.value)} 
+                          />
+                      </div>
+                      <div>
+                          <label className="block text-sm font-bold text-zinc-400 mb-4 uppercase tracking-widest">Hora</label>
+                          <select 
+                              className="w-full bg-black border-2 border-zinc-800 p-5 rounded-xl text-white focus:border-emerald-500 outline-none text-xl appearance-none cursor-pointer transition-all font-bold"
+                              onChange={(e) => setSelectedTime(e.target.value)}
+                          >
+                              <option value="">-- Seleccionar --</option>
+                              {timeSlots.map((slot) => (
+                                  <option key={slot.value} value={slot.value}>{slot.label}</option>
+                              ))}
+                          </select>
+                      </div>
                     </div>
                   </div>
+
                   <div className="flex gap-4"><button onClick={() => setStep(1)} className="px-6 py-4 border border-white/10 rounded-xl hover:bg-white/5">Atrás</button><button onClick={() => setStep(3)} disabled={!selectedDate || !selectedTime} className="flex-1 px-8 py-4 bg-white text-black font-bold rounded-xl hover:bg-emerald-400 transition-all disabled:opacity-50">SIGUIENTE ➔</button></div>
                 </motion.div>
               )}
 
-              {/* PASO 3 */}
+              {/* PASO 3: DATOS Y RESUMEN */}
               {step === 3 && (
                 <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                  <h3 className="text-2xl font-bold mb-6">Tus Datos</h3>
+                  <h3 className="text-3xl font-bold mb-8 text-white">Tus Datos</h3>
                   <div className="space-y-4 mb-8">
-                    <div><label className="block text-xs font-bold text-zinc-500 mb-2 uppercase">Nombre Completo</label><input type="text" placeholder="Ej: Carlos Pérez" className="w-full bg-black border border-zinc-700 p-4 rounded-xl text-white focus:border-emerald-500 outline-none" value={clientName} onChange={(e) => setClientName(e.target.value)} /></div>
-                    <div><label className="block text-xs font-bold text-zinc-500 mb-2 uppercase">Teléfono / WhatsApp</label><input type="tel" placeholder="Ej: 8888-8888" className="w-full bg-black border border-zinc-700 p-4 rounded-xl text-white focus:border-emerald-500 outline-none" value={clientPhone} onChange={(e) => setClientPhone(e.target.value)} /></div>
+                    <div><label className="block text-sm font-bold text-zinc-400 mb-2 uppercase tracking-widest">Nombre Completo</label><input type="text" placeholder="Ej: Carlos Pérez" className="w-full bg-black border-2 border-zinc-800 p-6 rounded-xl text-white focus:border-emerald-500 outline-none text-xl placeholder:text-zinc-700 transition-all" value={clientName} onChange={(e) => setClientName(e.target.value)} /></div>
+                    <div><label className="block text-sm font-bold text-zinc-400 mb-2 uppercase tracking-widest">Teléfono / WhatsApp</label><input type="tel" placeholder="Ej: 8888-8888" className="w-full bg-black border-2 border-zinc-800 p-6 rounded-xl text-white focus:border-emerald-500 outline-none text-xl placeholder:text-zinc-700 transition-all" value={clientPhone} onChange={(e) => setClientPhone(e.target.value)} /></div>
                   </div>
-                  <div className="bg-emerald-900/20 border border-emerald-500/20 p-4 rounded-xl mb-6">
-                    <h4 className="font-bold text-emerald-400 mb-2">Resumen:</h4>
-                    <p className="text-sm text-zinc-300">📅 {selectedDate} a las {selectedTime}</p>
-                    <p className="text-sm text-zinc-300">💈 Barbero: {getBarberName()}</p>
-                    <p className="text-sm text-zinc-300">✂️ {selectedServices.map(s => s.name).join(", ")}</p>
-                    <p className="text-sm text-zinc-300 font-bold mt-2">Total: C$ {totalPrice}</p>
+
+                  <div className="bg-emerald-900/10 border border-emerald-500/30 p-8 rounded-2xl mb-6">
+                      <h4 className="text-emerald-400 font-bold tracking-widest uppercase mb-6 text-sm">Resumen de Cita</h4>
+                      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pb-6 border-b border-white/10 gap-4">
+                          <div>
+                              <p className="text-zinc-400 text-sm uppercase mb-1">Fecha y Hora</p>
+                              <p className="text-2xl font-bold text-white capitalize">{formatDate(selectedDate)}</p>
+                              <p className="text-xl text-emerald-400 font-bold mt-1">a las {formatTime(selectedTime)}</p>
+                          </div>
+                          <div className="md:text-right">
+                              <p className="text-zinc-400 text-sm uppercase mb-1">Profesional</p>
+                              <p className="text-2xl font-bold text-white">{getBarberName()}</p>
+                          </div>
+                      </div>
+                      <div className="space-y-3">
+                          {selectedServices.map(s => (
+                              <div key={s.id} className="flex justify-between text-zinc-300 text-lg">
+                                  <span>{s.name}</span>
+                                  <span className="font-bold">C$ {s.price}</span>
+                              </div>
+                          ))}
+                      </div>
+                      <div className="mt-6 pt-6 border-t border-white/10 flex justify-between items-center">
+                          <span className="text-xl font-bold text-zinc-400">Total a Pagar</span>
+                          <span className="text-4xl font-black text-white">C$ {totalPrice}</span>
+                      </div>
                   </div>
-                  <div className="flex gap-4"><button onClick={() => setStep(2)} className="px-6 py-4 border border-white/10 rounded-xl hover:bg-white/5">Atrás</button><button onClick={handleConfirmBooking} className="flex-1 px-8 py-4 bg-emerald-500 text-black font-bold rounded-xl hover:bg-emerald-400 transition-all shadow-[0_0_20px_rgba(16,185,129,0.4)]">CONFIRMAR RESERVA ✅</button></div>
+
+                  <div className="flex gap-4"><button onClick={() => setStep(2)} className="px-6 py-4 border border-white/10 rounded-xl hover:bg-white/5">Atrás</button><button onClick={handleConfirmBooking} className="flex-1 px-8 py-4 bg-emerald-500 text-black font-bold rounded-xl hover:bg-emerald-400 transition-all shadow-[0_0_30px_rgba(16,185,129,0.4)]">CONFIRMAR RESERVA ✅</button></div>
                 </motion.div>
               )}
 
-              {/* PASO 4 */}
+              {/* PASO 4: ÉXITO */}
               {step === 4 && (
-                <motion.div key="step4" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-10">
-                  {/* ICONO DE ÉXITO MEJORADO */}
-    <div className="w-28 h-28 bg-emerald-600/20 border-2 border-emerald-500 rounded-full flex items-center justify-center text-6xl mx-auto mb-8 shadow-[0_0_60px_rgba(16,185,129,0.6)] animate-pulse">
-        ✅
-    </div>
-    {/* TÍTULO CON MÁS BRILLO */}
-    <h3 className="text-5xl font-black mb-4 text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-emerald-200 to-emerald-400 tracking-tight drop-shadow-[0_0_10px_rgba(16,185,129,0.8)]">
-        ¡Reserva Exitosa!
-    </h3>
-                  <h3 className="text-3xl font-bold mb-4">¡Reserva Exitosa!</h3>
-                  <p className="text-zinc-400 max-w-md mx-auto mb-8">Te esperamos el <span className="text-white font-bold">{selectedDate}</span> a las <span className="text-white font-bold">{selectedTime}</span>.</p>
-                  <button onClick={() => { setStep(1); setSelectedServices([]); setClientName(""); setClientPhone(""); }} className="px-8 py-4 bg-white/10 border border-white/20 rounded-xl hover:bg-white/20 transition-all font-bold">Hacer otra reserva</button>
+                <motion.div key="step4" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-16">
+                  <div className="w-28 h-28 bg-emerald-600/20 border-2 border-emerald-500 rounded-full flex items-center justify-center text-6xl mx-auto mb-8 shadow-[0_0_60px_rgba(16,185,129,0.6)] animate-pulse">✅</div>
+                  <h3 className="text-5xl font-black mb-6 text-white tracking-tight drop-shadow-[0_0_15px_rgba(16,185,129,0.5)]">¡Reserva Exitosa!</h3>
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-6 max-w-lg mx-auto mb-10 backdrop-blur-md">
+                      <p className="text-zinc-300 text-lg leading-relaxed">Gracias por confiar en <span className="text-emerald-400 font-bold">Estilo26</span>, <span className="text-white font-bold">{clientName}</span>.<br/>Tu cita está confirmada para el:</p>
+                      <p className="text-2xl font-black text-white mt-4 uppercase tracking-wide">{formatDate(selectedDate)}</p>
+                      <p className="text-xl text-emerald-400 font-bold">a las {formatTime(selectedTime)}</p>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                      <button onClick={() => { setStep(1); setSelectedServices([]); setClientName(""); setClientPhone(""); }} className="px-8 py-4 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-900/40 uppercase tracking-widest text-sm">📅 Agendar Otra</button>
+                      <button onClick={() => window.location.href = "/"} className="px-8 py-4 bg-transparent border border-zinc-700 text-zinc-300 font-bold rounded-xl hover:bg-zinc-800 hover:text-white transition-all uppercase tracking-widest text-sm">🏠 Volver al Inicio</button>
+                  </div>
                 </motion.div>
               )}
 
