@@ -47,5 +47,20 @@ public class AppointmentController {
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage()); // Error 400 si no existe
         }
+    }// --- NUEVO ENDPOINT: PUT /reschedule ---
+    @PutMapping("/{id}/reschedule")
+    public ResponseEntity<?> reschedule(
+            @PathVariable Long id,
+            @RequestParam String date, // Nueva fecha (YYYY-MM-DD)
+            @RequestParam String time  // Nueva hora (HH:mm)
+    ) {
+        try {
+            Appointment updated = appointmentService.rescheduleAppointment(id, date, time);
+            return ResponseEntity.ok(updated);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
+
+
 }

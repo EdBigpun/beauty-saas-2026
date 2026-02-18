@@ -34,6 +34,11 @@ export default function CitasPage() {
   const [barbers, setBarbers] = useState<Barber[]>([]);
   const [filterBarber, setFilterBarber] = useState("TODOS");
 
+  // --- NUEVO: ESTADOS PARA REAGENDAR ---
+  const [isRescheduling, setIsRescheduling] = useState(false);
+  const [newDate, setNewDate] = useState("");
+  const [newTime, setNewTime] = useState("");
+
   // --- 3. HELPERS ---
   const formatTime = (timeString: string) => {
     if (!timeString) return "--:--";
@@ -55,6 +60,28 @@ export default function CitasPage() {
       year: "numeric",
     }).format(date);
   };
+
+  // --- NUEVO: GENERADOR DE HORAS (Para el select de reagendar) ---
+  const generateTimeSlots = () => {
+    const times = [];
+    for (let i = 8; i <= 20; i++) { 
+      const period = i >= 12 ? 'PM' : 'AM';
+      let displayHour = i > 12 ? i - 12 : i;
+      if (displayHour === 0) displayHour = 12;
+      
+      const time00 = `${i.toString().padStart(2, '0')}:00`;
+      const label00 = `${displayHour}:00 ${period}`;
+      times.push({ value: time00, label: label00 });
+
+      if (i < 20) {
+        const time30 = `${i.toString().padStart(2, '0')}:30`;
+        const label30 = `${displayHour}:30 ${period}`;
+        times.push({ value: time30, label: label30 });
+      }
+    }
+    return times;
+  };
+  const timeSlots = generateTimeSlots();
 
   // --- 4. CARGAS DE DATOS ---
   const fetchAppointments = () => {
@@ -97,6 +124,16 @@ export default function CitasPage() {
   }, [router]);
 
   // --- 5. LÓGICA DE ACTUALIZACIÓN ---
+  
+  // Función auxiliar para cerrar y limpiar
+  const closeModal = () => {
+    setSelectedCita(null);
+    setIsRescheduling(false);
+    setNewDate("");
+    setNewTime("");
+  };
+
+  // Actualizar Estado (Completar/Cancelar)
   const updateStatus = async (newStatus: string) => {
     if (!selectedCita) return;
     setProcessing(true);
@@ -107,7 +144,7 @@ export default function CitasPage() {
       );
       if (res.ok) {
         alert("¡Estado actualizado!");
-        setSelectedCita(null);
+        closeModal();
         fetchAppointments();
       } else {
         alert("Error al actualizar");
@@ -119,15 +156,43 @@ export default function CitasPage() {
     }
   };
 
-  // --- 6. LÓGICA DE FILTRADO Y SEPARACIÓN (ESTANTES) ---
+  // NUEVO: Reagendar Cita
+  const handleReschedule = async () => {
+    if (!selectedCita || !newDate || !newTime) {
+      alert("⚠️ Selecciona fecha y hora nuevas.");
+      return;
+    }
+    setProcessing(true);
+    try {
+        const res = await fetch(
+            `http://localhost:9090/api/appointments/${selectedCita.id}/reschedule?date=${newDate}&time=${newTime}`,
+            { method: "PUT" }
+        );
+
+        if (res.ok) {
+            alert("✅ Cita reagendada con éxito.");
+            closeModal();
+            fetchAppointments();
+        } else {
+            const errorText = await res.text();
+            alert("⚠️ Error: " + errorText);
+        }
+    } catch (error) {
+        alert("Error de conexión.");
+    } finally {
+        setProcessing(false);
+    }
+  };
+
+  // --- 6. LÓGICA DE FILTRADO Y ESTANTES ---
   
-  // 1. Primero filtramos por barbero (como antes)
+  // Filtrar por Barbero
   const filteredAppointments = appointments.filter((cita) => {
     if (filterBarber === "TODOS") return true;
     return (cita.barberName || "") === filterBarber;
   });
 
-  // 2. Calculamos métricas
+  // Métricas
   const stats = {
     pendientes: filteredAppointments.filter(c => c.status === "PENDIENTE").length,
     completadas: filteredAppointments.filter(c => c.status === "COMPLETADA").length,
@@ -135,19 +200,18 @@ export default function CitasPage() {
     noShow: filteredAppointments.filter(c => c.status === "NO ASISTIÓ").length,
   };
 
-  // 3. SEPARAMOS EN BLOQUES (Aquí creamos los "Estantes")
+  // Separar en Estantes
   const pendingCitas = filteredAppointments.filter(c => c.status === "PENDIENTE");
   const completedCitas = filteredAppointments.filter(c => c.status === "COMPLETADA");
   const cancelledCitas = filteredAppointments.filter(c => c.status === "CANCELADA" || c.status === "NO ASISTIÓ");
 
-  // --- COMPONENTE DE TARJETA (Para no repetir código) ---
+  // Componente de Tarjeta
   const CitaCard = ({ cita, isDimmed = false }: { cita: Appointment, isDimmed?: boolean }) => (
     <div 
         className={`border p-6 rounded-2xl transition-all relative overflow-hidden group
             ${isDimmed ? 'bg-black border-zinc-900 opacity-60 hover:opacity-100 grayscale-[50%] hover:grayscale-0' : 'bg-[#0f0f0f] border-zinc-800 hover:border-emerald-500/50'}
         `}
     >
-      {/* Decoración solo si no está "tenue" */}
       {!isDimmed && (
          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-bl-full -mr-6 -mt-6 transition-all group-hover:bg-emerald-500/10"></div>
       )}
@@ -180,9 +244,8 @@ export default function CitasPage() {
         <div>
             <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-1">PROFESIONAL</p>
             <p className="text-emerald-400 font-bold text-sm flex items-center gap-2">
-                {/* LÓGICA DE NOMBRE ADMIN: Si es 'admin', agrega (Admin) */}
-                ✂️ {cita.barberName || "Cualquiera"} 
-                {cita.barberName === 'admin' && <span className="text-zinc-500 text-xs font-normal ml-1">(Admin)</span>}
+                {/* Corrección del nombre Admin */}
+                ✂️ {cita.barberName === 'admin' ? 'Carlos Pérez (Admin)' : (cita.barberName || "Cualquiera")}
             </p>
         </div>
       </div>
@@ -270,7 +333,7 @@ export default function CitasPage() {
            </div>
         )}
 
-        {/* --- ESTANTE 1: PENDIENTES (PRIORIDAD) --- */}
+        {/* --- ESTANTE 1: PENDIENTES --- */}
         {!loading && !errorMsg && pendingCitas.length > 0 && (
           <div className="mb-12">
              <div className="flex items-center gap-4 mb-6">
@@ -284,7 +347,7 @@ export default function CitasPage() {
           </div>
         )}
 
-        {/* --- ESTANTE 2: COMPLETADAS (HISTORIAL) --- */}
+        {/* --- ESTANTE 2: COMPLETADAS --- */}
         {!loading && !errorMsg && completedCitas.length > 0 && (
           <div className="mb-12 opacity-80 hover:opacity-100 transition-opacity duration-500">
              <div className="flex items-center gap-4 mb-6">
@@ -298,7 +361,7 @@ export default function CitasPage() {
           </div>
         )}
 
-        {/* --- ESTANTE 3: CANCELADAS / OTROS --- */}
+        {/* --- ESTANTE 3: OTROS --- */}
         {!loading && !errorMsg && cancelledCitas.length > 0 && (
           <div className="mb-12 opacity-60 hover:opacity-100 transition-opacity duration-500">
              <div className="flex items-center gap-4 mb-6">
@@ -314,28 +377,69 @@ export default function CitasPage() {
 
       </div>
 
-      {/* --- MODAL --- */}
+      {/* --- MODAL (AHORA SÍ COMPLETO) --- */}
       {selectedCita && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
             <div className="bg-[#111] border border-zinc-700 w-full max-w-md rounded-2xl p-8 shadow-2xl relative animate-in fade-in zoom-in duration-200">
-                <button onClick={() => setSelectedCita(null)} className="absolute top-4 right-4 text-zinc-500 hover:text-white">✕</button>
+                <button onClick={closeModal} className="absolute top-4 right-4 text-zinc-500 hover:text-white">✕</button>
+                
                 <h2 className="text-2xl font-bold text-white mb-2">
-                    {selectedCita.status === 'PENDIENTE' ? 'Gestionar Cita' : 'Detalles de Cita'}
+                    {/* Título cambia según la acción */}
+                    {isRescheduling ? '📅 Reagendar Cita' : (selectedCita.status === 'PENDIENTE' ? 'Gestionar Cita' : 'Detalles de Cita')}
                 </h2>
+                
                 <div className="mb-6 text-sm text-zinc-400 bg-zinc-900/50 p-4 rounded-xl border border-zinc-800">
                     <p>Cliente: <span className="text-white font-bold">{selectedCita.clientName}</span></p>
-                    <p>Fecha: <span className="text-white">{formatDate(selectedCita.appointmentDate)}</span></p>
-                    <p>Estado: <span className="text-emerald-400 font-bold">{selectedCita.status}</span></p>
+                    <p>Fecha Actual: <span className="text-white">{formatDate(selectedCita.appointmentDate)} a las {formatTime(selectedCita.appointmentTime)}</span></p>
                 </div>
+
                 {selectedCita.status === 'PENDIENTE' ? (
-                    <div className="space-y-3">
-                        <button onClick={() => updateStatus("COMPLETADA")} disabled={processing} className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl flex items-center justify-center gap-2">✅ Marcar COMPLETADA</button>
-                        <div className="grid grid-cols-2 gap-3">
-                            <button onClick={() => updateStatus("CANCELADA")} disabled={processing} className="w-full py-3 bg-red-900/20 border border-red-900/50 hover:bg-red-900/40 text-red-400 font-bold rounded-xl">❌ Cancelar</button>
-                            <button onClick={() => updateStatus("NO ASISTIÓ")} disabled={processing} className="w-full py-3 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 text-zinc-300 font-bold rounded-xl">⚠️ No Show</button>
-                        </div>
-                    </div>
+                    <>
+                        {/* CARA A: BOTONES NORMALES */}
+                        {!isRescheduling ? (
+                            <div className="space-y-3">
+                                <button onClick={() => updateStatus("COMPLETADA")} disabled={processing} className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/20">✅ Marcar COMPLETADA</button>
+                                
+                                <button onClick={() => setIsRescheduling(true)} disabled={processing} className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20">📅 Reagendar Cita</button>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button onClick={() => updateStatus("CANCELADA")} disabled={processing} className="w-full py-3 bg-red-900/20 border border-red-900/50 hover:bg-red-900/40 text-red-400 font-bold rounded-xl">❌ Cancelar</button>
+                                    <button onClick={() => updateStatus("NO ASISTIÓ")} disabled={processing} className="w-full py-3 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 text-zinc-300 font-bold rounded-xl">⚠️ No Show</button>
+                                </div>
+                            </div>
+                        ) : (
+                            /* CARA B: FORMULARIO DE REAGENDAR */
+                            <div className="space-y-4 animate-in slide-in-from-right duration-200">
+                                <div>
+                                    <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase">Nueva Fecha</label>
+                                    <input 
+                                        type="date" 
+                                        style={{ colorScheme: "dark" }}
+                                        className="w-full bg-black border border-zinc-700 p-4 rounded-xl text-white focus:border-blue-500 outline-none"
+                                        onChange={(e) => setNewDate(e.target.value)}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase">Nueva Hora</label>
+                                    <select 
+                                        className="w-full bg-black border border-zinc-700 p-4 rounded-xl text-white focus:border-blue-500 outline-none"
+                                        onChange={(e) => setNewTime(e.target.value)}
+                                    >
+                                        <option value="">Selecciona hora</option>
+                                        {timeSlots.map((slot) => (
+                                            <option key={slot.value} value={slot.value}>{slot.label}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="flex gap-3 pt-2">
+                                    <button onClick={() => setIsRescheduling(false)} className="flex-1 py-3 bg-zinc-800 text-white font-bold rounded-xl hover:bg-zinc-700">Cancelar</button>
+                                    <button onClick={handleReschedule} disabled={!newDate || !newTime || processing} className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-500 disabled:opacity-50">💾 Guardar Cambio</button>
+                                </div>
+                            </div>
+                        )}
+                    </>
                 ) : (
+                    /* SOLO LECTURA SI YA NO ES PENDIENTE */
                     <div className="text-center">
                         <p className="text-zinc-500 italic mb-4">Cita procesada. Solo lectura.</p>
                         <button onClick={() => updateStatus("PENDIENTE")} className="text-xs text-zinc-600 hover:text-zinc-300 underline">↺ Corregir (Volver a Pendiente)</button>
@@ -347,3 +451,4 @@ export default function CitasPage() {
     </div>
   );
 }
+         
