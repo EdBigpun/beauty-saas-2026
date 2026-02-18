@@ -33,4 +33,19 @@ public class AppointmentController {
             return ResponseEntity.internalServerError().build();
         }
     }
+
+    // --- NUEVO ENDPOINT: PUT (Actualizar) ---
+    // La URL será: /api/appointments/{id}/status?status=COMPLETADA
+    @PutMapping("/{id}/status")
+    public ResponseEntity<?> updateAppointmentStatus(
+            @PathVariable Long id,      // Toma el ID de la URL
+            @RequestParam String status // Toma el estado de los parámetros (?status=...)
+    ) {
+        try {
+            Appointment updatedAppointment = appointmentService.updateStatus(id, status);
+            return ResponseEntity.ok(updatedAppointment); // Devuelve la cita ya corregida
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage()); // Error 400 si no existe
+        }
+    }
 }

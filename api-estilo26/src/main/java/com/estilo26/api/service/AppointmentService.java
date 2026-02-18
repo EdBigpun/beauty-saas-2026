@@ -44,4 +44,20 @@ public class AppointmentService {
         nuevaCita.setStatus("PENDIENTE");
         return appointmentRepository.save(nuevaCita);
     }
+
+    // --- NUEVO MÉTODO: ACTUALIZAR ESTADO ---
+    // Recibe el ID de la cita (cuál cambiar) y el nuevo estado (qué ponerle)
+    public Appointment updateStatus(Long id, String newStatus) {
+        // 1. BUSCAR: Intentamos encontrar la cita en la BD por su ID.
+        // .findById devuelve un "Optional" (una caja que puede estar llena o vacía)
+        return appointmentRepository.findById(id)
+                .map(cita -> {
+                    // 2. MODIFICAR: Si la encontramos, cambiamos su estado.
+                    cita.setStatus(newStatus);
+                    // 3. GUARDAR: Hibernate detecta que ya existe y hace un UPDATE en vez de INSERT.
+                    return appointmentRepository.save(cita);
+                })
+                // 4. ERROR: Si la caja estaba vacía (no existe el ID), lanzamos error.
+                .orElseThrow(() -> new RuntimeException("Cita no encontrada con id: " + id));
+    }
 }
