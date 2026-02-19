@@ -12,6 +12,7 @@ interface Appointment {
   status: string;
   services: { name: string; price: number }[];
   barberName?: string;
+  rescheduled?: boolean; // <--- NUEVO CAMPO
 }
 
 interface Barber {
@@ -206,66 +207,114 @@ export default function CitasPage() {
   const cancelledCitas = filteredAppointments.filter(c => c.status === "CANCELADA" || c.status === "NO ASISTIÓ");
 
   // Componente de Tarjeta
-  const CitaCard = ({ cita, isDimmed = false }: { cita: Appointment, isDimmed?: boolean }) => (
-    <div 
-        className={`border p-6 rounded-2xl transition-all relative overflow-hidden group
-            ${isDimmed ? 'bg-black border-zinc-900 opacity-60 hover:opacity-100 grayscale-[50%] hover:grayscale-0' : 'bg-[#0f0f0f] border-zinc-800 hover:border-emerald-500/50'}
+  const CitaCard = ({
+    cita,
+    isDimmed = false,
+  }: {
+    cita: Appointment;
+    isDimmed?: boolean;
+  }) => (
+    <div
+      className={`border p-6 rounded-2xl transition-all relative overflow-hidden group
+            ${isDimmed ? "bg-black border-zinc-900 opacity-60 hover:opacity-100 grayscale-[50%] hover:grayscale-0" : "bg-[#0f0f0f] border-zinc-800 hover:border-emerald-500/50"}
         `}
     >
       {!isDimmed && (
-         <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-bl-full -mr-6 -mt-6 transition-all group-hover:bg-emerald-500/10"></div>
+        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-bl-full -mr-6 -mt-6 transition-all group-hover:bg-emerald-500/10"></div>
       )}
 
       <div className="flex justify-between items-start mb-6 relative z-10">
         <div>
-          <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-1">FECHA</p>
-          <p className="text-lg font-bold text-white capitalize">{formatDate(cita.appointmentDate)}</p>
+          <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-1">
+            FECHA
+          </p>
+          <p className="text-lg font-bold text-white capitalize">
+            {formatDate(cita.appointmentDate)}
+          </p>
         </div>
         <div className="text-right">
-          <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-1">HORA</p>
-          <div className={`px-3 py-1 rounded-lg border inline-block ${!isDimmed ? 'bg-zinc-900 border-zinc-700' : 'bg-transparent border-transparent'}`}>
-            <p className="text-xl font-black text-white">{formatTime(cita.appointmentTime)}</p>
+          <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-1">
+            HORA
+          </p>
+          <div
+            className={`px-3 py-1 rounded-lg border inline-block ${!isDimmed ? "bg-zinc-900 border-zinc-700" : "bg-transparent border-transparent"}`}
+          >
+            <p className="text-xl font-black text-white">
+              {formatTime(cita.appointmentTime)}
+            </p>
           </div>
         </div>
       </div>
 
       <div className="mb-6 pb-6 border-b border-zinc-800 relative z-10">
-        <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-2">CLIENTE</p>
-        <h3 className="text-2xl font-bold text-white mb-1">{cita.clientName}</h3>
+        <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-2">
+          CLIENTE
+        </p>
+        <h3 className="text-2xl font-bold text-white mb-1">
+          {cita.clientName}
+        </h3>
         <p className="text-zinc-400 font-mono text-sm">📞 {cita.clientPhone}</p>
       </div>
 
       <div className="space-y-3 mb-6 relative z-10">
         <div className="flex flex-wrap gap-2">
-            {cita.services && cita.services.map((s, i) => (
-                <span key={i} className="px-2 py-1 bg-zinc-800/50 border border-zinc-700 rounded text-xs text-zinc-300">{s.name}</span>
+          {cita.services &&
+            cita.services.map((s, i) => (
+              <span
+                key={i}
+                className="px-2 py-1 bg-zinc-800/50 border border-zinc-700 rounded text-xs text-zinc-300"
+              >
+                {s.name}
+              </span>
             ))}
         </div>
         <div>
-            <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-1">PROFESIONAL</p>
-            <p className="text-emerald-400 font-bold text-sm flex items-center gap-2">
-                {/* Corrección del nombre Admin */}
-                ✂️ {cita.barberName === 'admin' ? 'Carlos Pérez (Admin)' : (cita.barberName || "Cualquiera")}
-            </p>
+          <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-1">
+            PROFESIONAL
+          </p>
+          <p className="text-emerald-400 font-bold text-sm flex items-center gap-2">
+            {/* Corrección del nombre Admin */}
+            ✂️{" "}
+            {cita.barberName === "admin"
+              ? "Carlos Pérez (Admin)"
+              : cita.barberName || "Cualquiera"}
+          </p>
         </div>
       </div>
 
       <div className="flex justify-between items-center pt-4 border-t border-zinc-800 relative z-10">
-        <span className={`px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded border 
-            ${cita.status === 'COMPLETADA' ? 'bg-green-900/20 text-green-500 border-green-900' : 
-              cita.status === 'CANCELADA' ? 'bg-red-900/20 text-red-500 border-red-900' : 
-              cita.status === 'PENDIENTE' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' :
-              'bg-zinc-800 text-zinc-400 border-zinc-700'}`}>
+        <div className="flex flex-col gap-1">
+          {/* ETIQUETA DE ESTADO */}
+          <span
+            className={`px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded border w-fit
+                ${
+                  cita.status === "COMPLETADA"
+                    ? "bg-green-900/20 text-green-500 border-green-900"
+                    : cita.status === "CANCELADA"
+                      ? "bg-red-900/20 text-red-500 border-red-900"
+                      : cita.status === "PENDIENTE"
+                        ? "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
+                        : "bg-zinc-800 text-zinc-400 border-zinc-700"
+                }`}
+          >
             {cita.status}
-        </span>
-        
-        <button 
-            onClick={() => setSelectedCita(cita)}
-            className={`text-xs font-bold uppercase tracking-widest transition-colors cursor-pointer flex items-center gap-1
-                ${!isDimmed ? 'text-white hover:text-emerald-400' : 'text-zinc-600 hover:text-zinc-400'}
+          </span>
+
+          {/* NUEVA ETIQUETA: SOLO SI FUE REAGENDADA Y ESTÁ PENDIENTE */}
+          {cita.rescheduled && cita.status === "PENDIENTE" && (
+            <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest flex items-center gap-1 animate-pulse">
+              🔄 REAGENDADO
+            </span>
+          )}
+        </div>
+
+        <button
+          onClick={() => setSelectedCita(cita)}
+          className={`text-xs font-bold uppercase tracking-widest transition-colors cursor-pointer flex items-center gap-1
+                ${!isDimmed ? "text-white hover:text-emerald-400" : "text-zinc-600 hover:text-zinc-400"}
             `}
         >
-            {!isDimmed ? 'GESTIONAR →' : '👁️ VER DETALLES'}
+          {!isDimmed ? "GESTIONAR →" : "👁️ VER DETALLES"}
         </button>
       </div>
     </div>

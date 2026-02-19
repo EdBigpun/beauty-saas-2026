@@ -16,11 +16,14 @@ public class Appointment {
     private String clientName;
     private String clientPhone;
 
-    private LocalDate appointmentDate; // Fecha (Ej: 2026-02-12)
-    private LocalTime appointmentTime; // Hora Inicio (Ej: 10:00)
+    private LocalDate appointmentDate;
+    private LocalTime appointmentTime;
+    private LocalTime endTime;
 
-    // 👇👇 AQUÍ ESTABA EL FALTANTE 👇👇
-    private LocalTime endTime;         // Hora Fin (Ej: 11:00)
+    // --- SOLUCIÓN AL ERROR DE BASE DE DATOS ---
+    // Le decimos a PostgreSQL que ponga "false" por defecto a las citas viejas
+    @Column(columnDefinition = "boolean default false")
+    private boolean rescheduled = false;
 
     @ManyToMany
     @JoinTable(
@@ -31,12 +34,10 @@ public class Appointment {
     private List<Service> services;
 
     private String status = "PENDIENTE";
-    private String barberName; // Nombre del profesional asignado
+    private String barberName;
 
-    // --- CONSTRUCTOR VACÍO ---
     public Appointment() {}
 
-    // --- GETTERS Y SETTERS (Para que Java pueda leer/escribir) ---
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -52,9 +53,11 @@ public class Appointment {
     public LocalTime getAppointmentTime() { return appointmentTime; }
     public void setAppointmentTime(LocalTime appointmentTime) { this.appointmentTime = appointmentTime; }
 
-    // 👇 GETTER Y SETTER PARA LA HORA FIN (NUEVO) 👇
     public LocalTime getEndTime() { return endTime; }
     public void setEndTime(LocalTime endTime) { this.endTime = endTime; }
+
+    public boolean isRescheduled() { return rescheduled; }
+    public void setRescheduled(boolean rescheduled) { this.rescheduled = rescheduled; }
 
     public List<Service> getServices() { return services; }
     public void setServices(List<Service> services) { this.services = services; }
@@ -65,4 +68,3 @@ public class Appointment {
     public String getBarberName() { return barberName; }
     public void setBarberName(String barberName) { this.barberName = barberName; }
 }
-
