@@ -49,36 +49,61 @@ export default function AdminPanel() {
   // =================================================================
   if (!isAuthenticated) {
     // Usamos una combinación de Tailwind y estilos en línea para asegurar el look
-    const gradientBackground = { background: 'linear-gradient(135deg, #0f172a 0%, #000000 50%, #064e3b 100%)' };
-    const cardStyle = { background: 'rgba(255, 255, 255, 0.03)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255, 255, 255, 0.05)' };
-    const inputStyle = { background: 'rgba(0, 0, 0, 0.5)', border: '1px solid #1f2937' };
+    const gradientBackground = {
+      background:
+        "linear-gradient(135deg, #0f172a 0%, #000000 50%, #064e3b 100%)",
+    };
+    const cardStyle = {
+      background: "rgba(255, 255, 255, 0.03)",
+      backdropFilter: "blur(20px)",
+      border: "1px solid rgba(255, 255, 255, 0.05)",
+    };
+    const inputStyle = {
+      background: "rgba(0, 0, 0, 0.5)",
+      border: "1px solid #1f2937",
+    };
 
     return (
-      <div className="min-h-screen flex items-center justify-center relative overflow-hidden px-4" style={gradientBackground}>
+      <div
+        className="min-h-screen flex items-center justify-center relative overflow-hidden px-4"
+        style={gradientBackground}
+      >
         {/* Luz ambiental de fondo (Cyberpunk glow) */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none"></div>
 
-        <div className="p-10 rounded-3xl w-full max-w-md shadow-2xl relative z-10 transition-all" style={cardStyle}>
+        <div
+          className="p-10 rounded-3xl w-full max-w-md shadow-2xl relative z-10 transition-all"
+          style={cardStyle}
+        >
           {/* ENCABEZADO RESTAURADO (Icono + Título + Descripción) */}
           <div className="text-center mb-10">
             {/* Icono del Poste de Barbero 💈 (Animado) */}
-            <div className="text-7xl mb-5 drop-shadow-[0_0_15px_rgba(16,185,129,0.5)] animate-pulse inline-block">💈</div>
+            <div className="text-7xl mb-5 drop-shadow-[0_0_15px_rgba(16,185,129,0.5)] animate-pulse inline-block">
+              💈
+            </div>
             {/* Título ESTILO26 */}
             <h1 className="text-4xl font-extrabold text-white tracking-[0.25em] drop-shadow-lg">
-              ESTILO<span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-emerald-600 drop-shadow-[0_0_10px_rgba(16,185,129,0.8)]">26</span>
+              ESTILO
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-emerald-600 drop-shadow-[0_0_10px_rgba(16,185,129,0.8)]">
+                26
+              </span>
             </h1>
             {/* Descripción */}
-            <p className="text-zinc-500 text-xs mt-4 tracking-[0.2em] uppercase font-bold">Acceso Administrativo Seguro</p>
+            <p className="text-zinc-500 text-xs mt-4 tracking-[0.2em] uppercase font-bold">
+              Acceso Administrativo Seguro
+            </p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">
             {/* Campo Usuario */}
             <div>
-              <label className="text-emerald-500/70 text-xs uppercase tracking-widest font-bold ml-2 mb-1 block">Usuario</label>
+              <label className="text-emerald-500/70 text-xs uppercase tracking-widest font-bold ml-2 mb-1 block">
+                Usuario
+              </label>
               <input
                 type="text"
                 value={username}
-                onChange={(e)=>setUsername(e.target.value)}
+                onChange={(e) => setUsername(e.target.value)}
                 className="w-full p-4 rounded-xl text-white focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/10 outline-none transition-all placeholder:text-zinc-700"
                 style={inputStyle}
                 placeholder="Ej: admin"
@@ -87,11 +112,13 @@ export default function AdminPanel() {
 
             {/* Campo Contraseña CON OJITO */}
             <div className="relative">
-               <label className="text-emerald-500/70 text-xs uppercase tracking-widest font-bold ml-2 mb-1 block">Contraseña</label>
+              <label className="text-emerald-500/70 text-xs uppercase tracking-widest font-bold ml-2 mb-1 block">
+                Contraseña
+              </label>
               <input
                 type={showPassword ? "text" : "password"}
                 value={password}
-                onChange={(e)=>setPassword(e.target.value)}
+                onChange={(e) => setPassword(e.target.value)}
                 className="w-full p-4 rounded-xl text-white focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/10 outline-none transition-all pr-14 placeholder:text-zinc-700"
                 style={inputStyle}
                 placeholder="••••••••"
@@ -99,7 +126,7 @@ export default function AdminPanel() {
               {/* Botón del Ojito (Toggle Show/Hide) */}
               <button
                 type="button"
-                onClick={()=>setShowPassword(!showPassword)}
+                onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-4 bottom-4 text-zinc-500 hover:text-emerald-400 transition-colors text-xl z-20 mb-[2px]"
                 title={showPassword ? "Ocultar contraseña" : "Ver contraseña"}
               >
@@ -113,7 +140,9 @@ export default function AdminPanel() {
               disabled={cargando}
               className="w-full py-5 bg-gradient-to-r from-emerald-700 via-emerald-600 to-emerald-800 text-white font-bold text-lg rounded-xl hover:scale-[1.01] hover:shadow-[0_0_25px_rgba(16,185,129,0.4)] active:scale-[0.99] transition-all uppercase tracking-[0.15em] relative overflow-hidden group"
             >
-              <span className="relative z-10 drop-shadow">{cargando ? "Validando..." : "Ingresar al Sistema"}</span>
+              <span className="relative z-10 drop-shadow">
+                {cargando ? "Validando..." : "Ingresar al Sistema"}
+              </span>
             </button>
           </form>
         </div>
@@ -124,62 +153,105 @@ export default function AdminPanel() {
   // 🔴 FIN DE SECCIÓN DE LOGIN 🔴
   // =================================================================
 
-
   // --- DASHBOARD (ESTA PARTE NO SE TOCÓ, SIGUE IGUAL QUE ANTES) ---
   return (
     <div className="min-h-screen bg-black text-white p-8">
-      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-        
+      <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
         {/* Encabezado */}
         <div className="flex justify-between items-center mb-10 pb-6 border-b border-gray-800">
           <div>
             <h1 className="text-4xl font-bold">Panel de Control</h1>
-            <p className="text-emerald-400 mt-1">Sesión activa: {username || "Admin"}</p>
+            <p className="text-emerald-400 mt-1">
+              Sesión activa: {username || "Admin"}
+            </p>
           </div>
-          <button onClick={handleLogout} className="px-6 py-2 bg-red-900 text-red-200 rounded-full">Cerrar Sesión</button>
+          <button
+            onClick={handleLogout}
+            className="px-6 py-2 bg-red-900 text-red-200 rounded-full"
+          >
+            Cerrar Sesión
+          </button>
         </div>
 
         {/* GRID PRINCIPAL (Usando estilos en línea para fuerza bruta) */}
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(3, 1fr)', 
-          gap: '24px', 
-          width: '100%' 
-        }}>
-          
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: "24px",
+            width: "100%",
+          }}
+        >
           {/* Tarjeta 1: Precios */}
-          <div 
+          <div
             onClick={() => router.push("/admin/servicios")}
             className="group bg-white/5 border border-white/10 p-8 rounded-2xl cursor-pointer hover:bg-white/10 hover:-translate-y-2 transition-all"
-            style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', minHeight: '300px' }}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-start",
+              textAlign: "left",
+              minHeight: "300px",
+            }}
           >
-            <div className="text-4xl mb-4 bg-emerald-500/20 w-16 h-16 rounded-full flex items-center justify-center">💰</div>
+            <div className="text-4xl mb-4 bg-emerald-500/20 w-16 h-16 rounded-full flex items-center justify-center">
+              💰
+            </div>
             <h2 className="text-2xl font-bold mb-2">Gestión de Precios</h2>
-            <p className="text-gray-400 text-sm mb-6 leading-relaxed">Actualiza los costos de cortes y servicios en tiempo real. Sincronizado con la App del cliente.</p>
-            <span className="text-emerald-400 font-bold mt-auto">Configurar Servicios &rarr;</span>
+            <p className="text-gray-400 text-sm mb-6 leading-relaxed">
+              Actualiza los costos de cortes y servicios en tiempo real.
+              Sincronizado con la App del cliente.
+            </p>
+            <span className="text-emerald-400 font-bold mt-auto">
+              Configurar Servicios &rarr;
+            </span>
           </div>
 
           {/* Tarjeta 2: Clientes */}
-          <div 
+          <div
+            onClick={() => router.push("/admin/clientes")}
             className="group bg-white/5 border border-white/10 p-8 rounded-2xl cursor-pointer hover:bg-white/10 hover:-translate-y-2 transition-all"
-            style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', minHeight: '300px' }}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-start",
+              textAlign: "left",
+              minHeight: "300px",
+            }}
           >
-            <div className="text-4xl mb-4 bg-blue-500/20 w-16 h-16 rounded-full flex items-center justify-center">🏆</div>
+            <div className="text-4xl mb-4 bg-blue-500/20 w-16 h-16 rounded-full flex items-center justify-center">
+              🏆
+            </div>
             <h2 className="text-2xl font-bold mb-2">Clientes VIP</h2>
-            <p className="text-gray-400 text-sm mb-6 leading-relaxed">Analiza quiénes son tus clientes más fieles y recompénsalos. Estadísticas mensuales.</p>
-            <span className="text-blue-400 font-bold mt-auto">Ver Reportes &rarr;</span>
+            <p className="text-gray-400 text-sm mb-6 leading-relaxed">
+              Analiza quiénes son tus clientes más fieles y recompénsalos.
+              Estadísticas mensuales.
+            </p>
+            <span className="text-blue-400 font-bold mt-auto">
+              Ver Reportes &rarr;
+            </span>
           </div>
 
           {/* Tarjeta 3: Próximamente (Con animación en la tarjeta) */}
-          <div 
+          <div
             className="group bg-white/5 border border-white/5 border-dashed p-8 rounded-2xl hover:bg-white/10 transition-all duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer"
-            style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', minHeight: '300px' }}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-start",
+              textAlign: "left",
+              minHeight: "300px",
+            }}
           >
-            <div className="text-4xl mb-4 bg-purple-500/20 w-16 h-16 rounded-full flex items-center justify-center">🚀</div>
+            <div className="text-4xl mb-4 bg-purple-500/20 w-16 h-16 rounded-full flex items-center justify-center">
+              🚀
+            </div>
             <h2 className="text-2xl font-bold mb-2">Próximamente</h2>
-            <p className="text-gray-500 text-sm mb-6 leading-relaxed">Nuevas funciones de marketing y contabilidad automática en desarrollo.</p>
+            <p className="text-gray-500 text-sm mb-6 leading-relaxed">
+              Nuevas funciones de marketing y contabilidad automática en
+              desarrollo.
+            </p>
           </div>
-
         </div>
       </div>
     </div>

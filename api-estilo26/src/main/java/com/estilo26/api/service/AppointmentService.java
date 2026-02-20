@@ -3,6 +3,7 @@ package com.estilo26.api.service;
 import com.estilo26.api.model.Appointment;
 import com.estilo26.api.model.Service;
 import com.estilo26.api.repository.AppointmentRepository;
+import com.estilo26.api.dto.ClientDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.LocalDate;
@@ -79,5 +80,11 @@ public class AppointmentService {
         cita.setRescheduled(true);
 
         return appointmentRepository.save(cita);
+    }
+
+    // --- NUEVO: OBTENER CLIENTES VIP ---
+    // Este método es el "Chef" pidiéndole al "Almacén" (Repository) la lista agrupada.
+    public List<ClientDTO> getVIPClients() {
+        return appointmentRepository.findTopVIPClients();
     }
 }

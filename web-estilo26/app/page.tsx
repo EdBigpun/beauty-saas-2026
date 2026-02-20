@@ -58,7 +58,12 @@ export default function Home() {
   useEffect(() => {
     fetch("http://localhost:9090/api/services")
       .then((res) => res.json())
-      .then((data) => setServices(data))
+      .then((data: Service[]) => {
+        // --- SOLUCIÓN JEDI: ORDENAR POR ID ---
+        // Forzamos a que siempre se muestren en el orden que fueron creados (1, 2, 3...)
+        const sortedServices = data.sort((a, b) => a.id - b.id);
+        setServices(sortedServices);
+      })
       .catch((err) => console.error(err));
 
     fetch("http://localhost:9090/api/users")
@@ -147,10 +152,13 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-emerald-500/30">
       
+      {/* SOLUCIÓN JEDI: CSS inyectado para que el Navbar haga Smooth Scroll */}
+      <style dangerouslySetContent={{ __html: `html { scroll-behavior: smooth; }` }} />
+
       {/* NAVBAR */}
       <nav className="fixed w-full z-50 bg-black/80 backdrop-blur-md border-b border-white/5">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-2 group cursor-pointer">
+          <div className="flex items-center gap-2 group cursor-pointer" onClick={() => window.scrollTo(0,0)}>
             <div className="w-10 h-10 bg-gradient-to-tr from-emerald-600 to-black rounded-lg flex items-center justify-center border border-emerald-500/30 group-hover:border-emerald-400 transition-all shadow-[0_0_20px_rgba(16,185,129,0.2)]">
               <span className="text-xl font-bold font-serif">E</span>
             </div>
@@ -168,7 +176,7 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* HERO SECTION */}
+      {/* HERO SECTION (ID: inicio) */}
       <section id="inicio" className="relative pt-32 pb-20 px-6 min-h-screen flex flex-col justify-center items-center">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1585747860715-2ba37e788b70?q=80&w=2074&auto=format&fit=crop')] bg-cover bg-center opacity-20 mask-image-gradient"></div>
         
@@ -183,8 +191,8 @@ export default function Home() {
           </p>
         </motion.div>
 
-        {/* WIDGET DE RESERVA */}
-        <div className="relative z-20 w-full max-w-4xl bg-zinc-900/80 backdrop-blur-xl border border-white/10 rounded-3xl p-1 shadow-2xl overflow-hidden">
+        {/* WIDGET DE RESERVA (ID: servicios - SOLUCIÓN NAVBAR) */}
+        <div id="servicios" className="relative z-20 w-full max-w-4xl bg-zinc-900/80 backdrop-blur-xl border border-white/10 rounded-3xl p-1 shadow-2xl overflow-hidden scroll-mt-24">
           
           {/* HEADER DE PASOS (01. SERVICIOS...) */}
           <div className="flex border-b border-white/5 bg-black/40">
@@ -221,13 +229,13 @@ export default function Home() {
                 </motion.div>
               )}
 
-              {/* PASO 2: AGENDA (AQUÍ ESTÁ EL CAMBIO DE TAMAÑO) */}
+              {/* PASO 2: AGENDA */}
               {step === 2 && (
                 <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                   <h3 className="text-3xl font-bold mb-8 text-white">Personaliza tu Cita</h3>
                   
                   <div className="space-y-8 mb-8">
-                    {/* BARBEROS - BOTONES MÁS GRANDES (p-5 y text-lg) */}
+                    {/* BARBEROS */}
                     <div>
                         <label className="block text-sm font-bold text-zinc-400 mb-4 uppercase tracking-widest">Selecciona Profesional</label>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -249,7 +257,7 @@ export default function Home() {
                         </div>
                     </div>
 
-                    {/* FECHA Y HORA - INPUTS MÁS GRANDES (p-5 y text-xl) */}
+                    {/* FECHA Y HORA */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <div>
                           <label className="block text-sm font-bold text-zinc-400 mb-4 uppercase tracking-widest">Fecha</label>
@@ -338,6 +346,21 @@ export default function Home() {
 
             </AnimatePresence>
           </div>
+        </div>
+      </section>
+
+      {/* SECCIONES ANCLA PARA EL NAVBAR (Diseño Minimalista) */}
+      <section id="galería" className="py-20 px-6 max-w-7xl mx-auto border-t border-white/5 scroll-mt-24">
+        <div className="text-center">
+          <h2 className="text-3xl md:text-5xl font-black text-white mb-4 uppercase tracking-tighter">Nuestra <span className="text-emerald-500">Galería</span></h2>
+          <p className="text-zinc-500">Próximamente: Las mejores transformaciones de Estilo26.</p>
+        </div>
+      </section>
+
+      <section id="ubicación" className="py-20 px-6 max-w-7xl mx-auto border-t border-white/5 scroll-mt-24">
+         <div className="text-center">
+          <h2 className="text-3xl md:text-5xl font-black text-white mb-4 uppercase tracking-tighter">Dónde <span className="text-emerald-500">Encontrarnos</span></h2>
+          <p className="text-zinc-500">Estelí, Nicaragua. Integración con Google Maps próximamente.</p>
         </div>
       </section>
 
