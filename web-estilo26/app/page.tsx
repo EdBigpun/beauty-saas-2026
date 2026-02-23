@@ -54,19 +54,20 @@ export default function Home() {
     return `${h}:${m} ${ampm}`;
   };
 
-  // --- CARGA INICIAL ---
+  // --- CARGA INICIAL (USANDO VARIABLE DE ENTORNO) ---
   useEffect(() => {
-    fetch("http://localhost:9090/api/services")
+    // 1. Usamos process.env.NEXT_PUBLIC_API_URL en vez de localhost quemado
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
+    fetch(`${apiUrl}/api/services`)
       .then((res) => res.json())
       .then((data: Service[]) => {
-        // --- SOLUCIÓN JEDI: ORDENAR POR ID ---
-        // Forzamos a que siempre se muestren en el orden que fueron creados (1, 2, 3...)
         const sortedServices = data.sort((a, b) => a.id - b.id);
         setServices(sortedServices);
       })
       .catch((err) => console.error(err));
 
-    fetch("http://localhost:9090/api/users")
+    fetch(`${apiUrl}/api/users`)
       .then((res) => res.json())
       .then((data: Barber[]) => {
         const onlyBarbers = data.filter(u => u.role === 'BARBERO' || u.role === 'ADMIN');
@@ -114,7 +115,7 @@ export default function Home() {
     return barber ? barber.username : "Cualquiera";
   };
 
-  // Enviar Reserva
+  // Enviar Reserva (USANDO VARIABLE DE ENTORNO)
   const handleConfirmBooking = async () => {
     if (!clientName || !clientPhone) {
       alert("⚠️ Faltan tus datos personales.");
@@ -132,7 +133,8 @@ export default function Home() {
     };
 
     try {
-      const res = await fetch("http://localhost:9090/api/appointments", {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      const res = await fetch(`${apiUrl}/api/appointments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(bookingData),
@@ -152,7 +154,6 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-emerald-500/30">
       
-      {/* SOLUCIÓN JEDI: CSS inyectado para que el Navbar haga Smooth Scroll */}
       <style dangerouslySetContent={{ __html: `html { scroll-behavior: smooth; }` }} />
 
       {/* NAVBAR */}
@@ -176,11 +177,10 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* HERO SECTION (ID: inicio) */}
+      {/* HERO SECTION */}
       <section id="inicio" className="relative pt-32 pb-20 px-6 min-h-screen flex flex-col justify-center items-center">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1585747860715-2ba37e788b70?q=80&w=2074&auto=format&fit=crop')] bg-cover bg-center opacity-20 mask-image-gradient"></div>
         
-        {/* TÍTULO GIGANTE RESTAURADO */}
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="relative z-10 text-center max-w-6xl mx-auto mb-16">
           <span className="text-emerald-500 font-bold tracking-[0.3em] text-xs mb-4 block animate-pulse">ESTELÍ, NICARAGUA</span>
           <h1 className="text-6xl md:text-9xl font-black tracking-tighter mb-6 leading-none">
@@ -191,10 +191,9 @@ export default function Home() {
           </p>
         </motion.div>
 
-        {/* WIDGET DE RESERVA (ID: servicios - SOLUCIÓN NAVBAR) */}
+        {/* WIDGET DE RESERVA */}
         <div id="servicios" className="relative z-20 w-full max-w-4xl bg-zinc-900/80 backdrop-blur-xl border border-white/10 rounded-3xl p-1 shadow-2xl overflow-hidden scroll-mt-24">
           
-          {/* HEADER DE PASOS (01. SERVICIOS...) */}
           <div className="flex border-b border-white/5 bg-black/40">
             <div className={`flex-1 py-4 text-center text-xs font-bold tracking-widest transition-all ${step >= 1 ? 'text-emerald-400 bg-emerald-500/5' : 'text-zinc-600'}`}>01. SERVICIOS</div>
             <div className={`flex-1 py-4 text-center text-xs font-bold tracking-widest transition-all ${step >= 2 ? 'text-emerald-400 bg-emerald-500/5' : 'text-zinc-600'}`}>02. AGENDA</div>
@@ -235,7 +234,6 @@ export default function Home() {
                   <h3 className="text-3xl font-bold mb-8 text-white">Personaliza tu Cita</h3>
                   
                   <div className="space-y-8 mb-8">
-                    {/* BARBEROS */}
                     <div>
                         <label className="block text-sm font-bold text-zinc-400 mb-4 uppercase tracking-widest">Selecciona Profesional</label>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -257,7 +255,6 @@ export default function Home() {
                         </div>
                     </div>
 
-                    {/* FECHA Y HORA */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <div>
                           <label className="block text-sm font-bold text-zinc-400 mb-4 uppercase tracking-widest">Fecha</label>
@@ -349,7 +346,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* SECCIONES ANCLA PARA EL NAVBAR (Diseño Minimalista) */}
       <section id="galería" className="py-20 px-6 max-w-7xl mx-auto border-t border-white/5 scroll-mt-24">
         <div className="text-center">
           <h2 className="text-3xl md:text-5xl font-black text-white mb-4 uppercase tracking-tighter">Nuestra <span className="text-emerald-500">Galería</span></h2>
