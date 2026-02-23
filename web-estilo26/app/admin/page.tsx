@@ -18,8 +18,12 @@ export default function AdminPanel() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setCargando(true);
+
+    // --- LÓGICA JEDI: Uso de Variable de Entorno ---
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
     try {
-      const res = await fetch("http://localhost:9090/api/auth/login", {
+      const res = await fetch(`${apiUrl}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
@@ -45,10 +49,9 @@ export default function AdminPanel() {
   };
 
   // =================================================================
-  // 🔴 SECCIÓN DE LOGIN RESTAURADA (LOOK CYBERPUNK/REFERENCIA) 🔴
+  // 🔴 SECCIÓN DE LOGIN (LOOK CYBERPUNK INTACTO) 🔴
   // =================================================================
   if (!isAuthenticated) {
-    // Usamos una combinación de Tailwind y estilos en línea para asegurar el look
     const gradientBackground = {
       background:
         "linear-gradient(135deg, #0f172a 0%, #000000 50%, #064e3b 100%)",
@@ -68,34 +71,28 @@ export default function AdminPanel() {
         className="min-h-screen flex items-center justify-center relative overflow-hidden px-4"
         style={gradientBackground}
       >
-        {/* Luz ambiental de fondo (Cyberpunk glow) */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none"></div>
 
         <div
           className="p-10 rounded-3xl w-full max-w-md shadow-2xl relative z-10 transition-all"
           style={cardStyle}
         >
-          {/* ENCABEZADO RESTAURADO (Icono + Título + Descripción) */}
           <div className="text-center mb-10">
-            {/* Icono del Poste de Barbero 💈 (Animado) */}
             <div className="text-7xl mb-5 drop-shadow-[0_0_15px_rgba(16,185,129,0.5)] animate-pulse inline-block">
               💈
             </div>
-            {/* Título ESTILO26 */}
             <h1 className="text-4xl font-extrabold text-white tracking-[0.25em] drop-shadow-lg">
               ESTILO
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-emerald-600 drop-shadow-[0_0_10px_rgba(16,185,129,0.8)]">
                 26
               </span>
             </h1>
-            {/* Descripción */}
             <p className="text-zinc-500 text-xs mt-4 tracking-[0.2em] uppercase font-bold">
               Acceso Administrativo Seguro
             </p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">
-            {/* Campo Usuario */}
             <div>
               <label className="text-emerald-500/70 text-xs uppercase tracking-widest font-bold ml-2 mb-1 block">
                 Usuario
@@ -110,7 +107,6 @@ export default function AdminPanel() {
               />
             </div>
 
-            {/* Campo Contraseña CON OJITO */}
             <div className="relative">
               <label className="text-emerald-500/70 text-xs uppercase tracking-widest font-bold ml-2 mb-1 block">
                 Contraseña
@@ -123,7 +119,6 @@ export default function AdminPanel() {
                 style={inputStyle}
                 placeholder="••••••••"
               />
-              {/* Botón del Ojito (Toggle Show/Hide) */}
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
@@ -134,7 +129,6 @@ export default function AdminPanel() {
               </button>
             </div>
 
-            {/* Botón Ingresar (Con efecto de brillo) */}
             <button
               type="submit"
               disabled={cargando}
@@ -153,11 +147,10 @@ export default function AdminPanel() {
   // 🔴 FIN DE SECCIÓN DE LOGIN 🔴
   // =================================================================
 
-  // --- DASHBOARD (ESTA PARTE NO SE TOCÓ, SIGUE IGUAL QUE ANTES) ---
+  // --- DASHBOARD ---
   return (
     <div className="min-h-screen bg-black text-white p-8">
       <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
-        {/* Encabezado */}
         <div className="flex justify-between items-center mb-10 pb-6 border-b border-gray-800">
           <div>
             <h1 className="text-4xl font-bold">Panel de Control</h1>
@@ -173,7 +166,6 @@ export default function AdminPanel() {
           </button>
         </div>
 
-        {/* GRID PRINCIPAL (Usando estilos en línea para fuerza bruta) */}
         <div
           style={{
             display: "grid",
@@ -182,7 +174,6 @@ export default function AdminPanel() {
             width: "100%",
           }}
         >
-          {/* Tarjeta 1: Precios */}
           <div
             onClick={() => router.push("/admin/servicios")}
             className="group bg-white/5 border border-white/10 p-8 rounded-2xl cursor-pointer hover:bg-white/10 hover:-translate-y-2 transition-all"
@@ -207,7 +198,6 @@ export default function AdminPanel() {
             </span>
           </div>
 
-          {/* Tarjeta 2: Clientes */}
           <div
             onClick={() => router.push("/admin/clientes")}
             className="group bg-white/5 border border-white/10 p-8 rounded-2xl cursor-pointer hover:bg-white/10 hover:-translate-y-2 transition-all"
@@ -232,7 +222,6 @@ export default function AdminPanel() {
             </span>
           </div>
 
-          {/* Tarjeta 3: Próximamente (Con animación en la tarjeta) */}
           <div
             className="group bg-white/5 border border-white/5 border-dashed p-8 rounded-2xl hover:bg-white/10 transition-all duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer"
             style={{

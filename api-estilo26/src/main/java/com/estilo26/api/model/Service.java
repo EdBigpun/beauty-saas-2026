@@ -1,26 +1,48 @@
-package com.estilo26.api.model; // Confirmado: Usamos 'model'
+package com.estilo26.api.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import java.math.BigDecimal;
+import java.math.BigDecimal; // IMPORTANTE: Importamos la clase para dinero
 
 @Entity
 @Table(name = "services")
-@Data
 public class Service {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private String name; // Ej: "Corte de Cabello"
+    private String name;
+    private String description;
 
-    private String description; // Ej: "Estilo clásico o moderno con tijera"
+    // RESTAURADO: Volvemos a usar BigDecimal para que el DataLoader no llore
+    private BigDecimal price;
 
-    @Column(nullable = false)
-    private BigDecimal price; // Ej: 200.00
+    private Integer durationMinutes;
 
-    @Column(name = "duration_minutes", nullable = false)
-    private Integer durationMinutes; // Ej: 30
+    // LA COLUMNA ICONO (Con el salvavidas para los servicios viejos)
+    @Column(columnDefinition = "varchar(255) default '✂️'")
+    private String icon;
+
+    // --- CONSTRUCTOR VACÍO ---
+    public Service() {}
+
+    // --- GETTERS Y SETTERS ---
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+
+    // GETTER Y SETTER DE PRECIO (Ahora usan BigDecimal)
+    public BigDecimal getPrice() { return price; }
+    public void setPrice(BigDecimal price) { this.price = price; }
+
+    public Integer getDurationMinutes() { return durationMinutes; }
+    public void setDurationMinutes(Integer durationMinutes) { this.durationMinutes = durationMinutes; }
+
+    public String getIcon() { return icon; }
+    public void setIcon(String icon) { this.icon = icon; }
 }
