@@ -2,17 +2,24 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-// --- 1. INTERFACES ---
+interface Service {
+  id: number;
+  name: string;
+  price: number;
+  durationMinutes: number;
+}
+
 interface Appointment {
   id: number;
   clientName: string;
   clientPhone: string;
   appointmentDate: string;
   appointmentTime: string;
+  endTime: string;
+  services: Service[];
   status: string;
-  services: { name: string; price: number }[];
-  barberName?: string;
-  rescheduled?: boolean; // <--- NUEVO CAMPO
+  barberName: string;
+  rescheduled: boolean;
 }
 
 interface Barber {
@@ -23,95 +30,57 @@ interface Barber {
 
 export default function CitasPage() {
   const router = useRouter();
-
-  // --- 2. ESTADOS ---
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [errorMsg, setErrorMsg] = useState("");
-  const [selectedCita, setSelectedCita] = useState<Appointment | null>(null);
-  const [processing, setProcessing] = useState(false);
-  
-  // Filtros
   const [barbers, setBarbers] = useState<Barber[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [filterBarber, setFilterBarber] = useState("TODOS");
 
-  // --- NUEVO: ESTADOS PARA REAGENDAR ---
-  const [isRescheduling, setIsRescheduling] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedAppt, setSelectedAppt] = useState<Appointment | null>(null);
+  
+  const [isRescheduleMode, setIsRescheduleMode] = useState(false);
   const [newDate, setNewDate] = useState("");
   const [newTime, setNewTime] = useState("");
 
-  // --- 3. HELPERS ---
   const formatTime = (timeString: string) => {
-    if (!timeString) return "--:--";
+    if (!timeString) return "";
     const [hours, minutes] = timeString.split(":");
     let h = parseInt(hours);
     const m = minutes;
     const ampm = h >= 12 ? "PM" : "AM";
-    h = h % 12;
-    h = h ? h : 12;
+    h = h % 12; // OPERADOR RESTAURADO: Convierte 13 en 1
+    h = h ? h : 12; // Si es 0, lo convierte en 12
     return `${h}:${m} ${ampm}`;
   };
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "";
     const date = new Date(dateString + "T00:00:00");
-    return new Intl.DateTimeFormat("es-ES", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    }).format(date);
+    return new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "long", year: "numeric" }).format(date);
   };
 
-  // --- NUEVO: GENERADOR DE HORAS (Para el select de reagendar) ---
-  const generateTimeSlots = () => {
-    const times = [];
-    for (let i = 8; i <= 20; i++) { 
-      const period = i >= 12 ? 'PM' : 'AM';
-      let displayHour = i > 12 ? i - 12 : i;
-      if (displayHour === 0) displayHour = 12;
+  const fetchAppointments = async () => {
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      const res = await fetch(`${apiUrl}/api/appointments`);
+      if (!res.ok) throw new Error("Error en red");
+      const data = await res.json();
       
-      const time00 = `${i.toString().padStart(2, '0')}:00`;
-      const label00 = `${displayHour}:00 ${period}`;
-      times.push({ value: time00, label: label00 });
-
-      if (i < 20) {
-        const time30 = `${i.toString().padStart(2, '0')}:30`;
-        const label30 = `${displayHour}:30 ${period}`;
-        times.push({ value: time30, label: label30 });
-      }
-    }
-    return times;
-  };
-  const timeSlots = generateTimeSlots();
-
-  // --- 4. CARGAS DE DATOS ---
-  const fetchAppointments = () => {
-    setLoading(true);
-    fetch("http://localhost:9090/api/appointments")
-      .then((res) => {
-        if (!res.ok) throw new Error("Error al conectar");
-        return res.json();
-      })
-      .then((data) => {
-        if (Array.isArray(data)) setAppointments(data);
-        else setAppointments([]);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error(error);
-        setErrorMsg("Error al cargar agenda");
-        setLoading(false);
+      const sortedData = data.sort((a: Appointment, b: Appointment) => {
+        const dateA = new Date(`${a.appointmentDate}T${a.appointmentTime}`).getTime();
+        const dateB = new Date(`${b.appointmentDate}T${b.appointmentTime}`).getTime();
+        return dateA - dateB;
       });
-  };
-
-  const fetchBarbers = () => {
-    fetch("http://localhost:9090/api/users")
-      .then((res) => res.json())
-      .then((data: Barber[]) => {
-        const onlyBarbers = data.filter(u => u.role === 'BARBERO' || u.role === 'ADMIN');
-        setBarbers(onlyBarbers);
-      })
-      .catch(err => console.error(err));
+      
+      setAppointments(sortedData);
+      setError(false);
+    } catch (err) {
+      console.error(err);
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -120,226 +89,203 @@ export default function CitasPage() {
       router.push("/admin");
       return;
     }
+
     fetchAppointments();
-    fetchBarbers();
+
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    fetch(`${apiUrl}/api/users`)
+      .then((res) => res.json())
+      .then((data: Barber[]) => {
+        const onlyBarbers = data.filter(u => u.role === 'BARBERO' || u.role === 'ADMIN');
+        setBarbers(onlyBarbers);
+      })
+      .catch(err => console.error(err));
   }, [router]);
 
-  // --- 5. LÓGICA DE ACTUALIZACIÓN ---
-  
-  // Función auxiliar para cerrar y limpiar
-  const closeModal = () => {
-    setSelectedCita(null);
-    setIsRescheduling(false);
-    setNewDate("");
-    setNewTime("");
-  };
-
-  // Actualizar Estado (Completar/Cancelar)
-  const updateStatus = async (newStatus: string) => {
-    if (!selectedCita) return;
-    setProcessing(true);
+  // --- ARREGLO JEDI 1: Cambio de 'newStatus' a 'status' ---
+  const actualizarEstado = async (id: number, nuevoEstado: string) => {
     try {
-      const res = await fetch(
-        `http://localhost:9090/api/appointments/${selectedCita.id}/status?status=${newStatus}`,
-        { method: "PUT" }
-      );
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      const res = await fetch(`${apiUrl}/api/appointments/${id}/status?status=${nuevoEstado}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
+      
       if (res.ok) {
-        alert("¡Estado actualizado!");
+        setAppointments(appointments.map(app => app.id === id ? { ...app, status: nuevoEstado } : app));
         closeModal();
-        fetchAppointments();
       } else {
-        alert("Error al actualizar");
+        const errorText = await res.text();
+        alert(`El servidor rechazó el cambio.\nMotivo: ${errorText}`);
       }
     } catch (error) {
-      alert("Error de conexión");
-    } finally {
-      setProcessing(false);
+      alert("Error crítico: No se pudo conectar con el servidor backend.");
     }
   };
 
-  // NUEVO: Reagendar Cita
-  const handleReschedule = async () => {
-    if (!selectedCita || !newDate || !newTime) {
-      alert("⚠️ Selecciona fecha y hora nuevas.");
+  // --- ARREGLO JEDI 2: Cambio de 'newDate/newTime' a 'date/time' ---
+  const reagendarCita = async () => {
+    if (!selectedAppt || !newDate || !newTime) {
+      alert("Debes seleccionar una nueva fecha y hora.");
       return;
     }
-    setProcessing(true);
     try {
-        const res = await fetch(
-            `http://localhost:9090/api/appointments/${selectedCita.id}/reschedule?date=${newDate}&time=${newTime}`,
-            { method: "PUT" }
-        );
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      const res = await fetch(`${apiUrl}/api/appointments/${selectedAppt.id}/reschedule?date=${newDate}&time=${newTime}`, {
+        method: "PUT",
+      });
 
-        if (res.ok) {
-            alert("✅ Cita reagendada con éxito.");
-            closeModal();
-            fetchAppointments();
-        } else {
-            const errorText = await res.text();
-            alert("⚠️ Error: " + errorText);
-        }
+      if (res.ok) {
+        alert("✅ Cita reagendada con éxito.");
+        fetchAppointments();
+        closeModal();
+      } else {
+        const errorText = await res.text();
+        alert("Error: " + errorText);
+      }
     } catch (error) {
-        alert("Error de conexión.");
-    } finally {
-        setProcessing(false);
+      alert("Error de conexión al servidor");
     }
   };
 
-  // --- 6. LÓGICA DE FILTRADO Y ESTANTES ---
-  
-  // Filtrar por Barbero
-  const filteredAppointments = appointments.filter((cita) => {
-    if (filterBarber === "TODOS") return true;
-    return (cita.barberName || "") === filterBarber;
-  });
-
-  // Métricas
-  const stats = {
-    pendientes: filteredAppointments.filter(c => c.status === "PENDIENTE").length,
-    completadas: filteredAppointments.filter(c => c.status === "COMPLETADA").length,
-    canceladas: filteredAppointments.filter(c => c.status === "CANCELADA").length,
-    noShow: filteredAppointments.filter(c => c.status === "NO ASISTIÓ").length,
+  const openModal = (app: Appointment) => {
+    setSelectedAppt(app);
+    setIsRescheduleMode(false);
+    setNewDate("");
+    setNewTime("");
+    setIsModalOpen(true);
   };
 
-  // Separar en Estantes
-  const pendingCitas = filteredAppointments.filter(c => c.status === "PENDIENTE");
-  const completedCitas = filteredAppointments.filter(c => c.status === "COMPLETADA");
-  const cancelledCitas = filteredAppointments.filter(c => c.status === "CANCELADA" || c.status === "NO ASISTIÓ");
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedAppt(null);
+    setIsRescheduleMode(false);
+  };
 
-  // Componente de Tarjeta
-  const CitaCard = ({
-    cita,
-    isDimmed = false,
-  }: {
-    cita: Appointment;
-    isDimmed?: boolean;
-  }) => (
-    <div
-      className={`border p-6 rounded-2xl transition-all relative overflow-hidden group
-            ${isDimmed ? "bg-black border-zinc-900 opacity-60 hover:opacity-100 grayscale-[50%] hover:grayscale-0" : "bg-[#0f0f0f] border-zinc-800 hover:border-emerald-500/50"}
-        `}
-    >
-      {!isDimmed && (
-        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-bl-full -mr-6 -mt-6 transition-all group-hover:bg-emerald-500/10"></div>
-      )}
+  const citasFiltradas = appointments.filter(app => {
+    if (filterBarber === "TODOS") return true;
+    if (filterBarber === "admin" && app.barberName === "admin") return true;
+    return app.barberName === filterBarber;
+  });
 
-      <div className="flex justify-between items-start mb-6 relative z-10">
-        <div>
-          <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-1">
-            FECHA
-          </p>
-          <p className="text-lg font-bold text-white capitalize">
-            {formatDate(cita.appointmentDate)}
-          </p>
-        </div>
-        <div className="text-right">
-          <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-1">
-            HORA
-          </p>
-          <div
-            className={`px-3 py-1 rounded-lg border inline-block ${!isDimmed ? "bg-zinc-900 border-zinc-700" : "bg-transparent border-transparent"}`}
-          >
-            <p className="text-xl font-black text-white">
-              {formatTime(cita.appointmentTime)}
-            </p>
-          </div>
-        </div>
-      </div>
+  const citasPendientes = citasFiltradas.filter(a => a.status === 'PENDIENTE');
+  const citasCompletadas = citasFiltradas.filter(a => a.status === 'COMPLETADA');
+  const citasHistorial = citasFiltradas.filter(a => a.status === 'CANCELADA' || a.status === 'NO_SHOW');
 
-      <div className="mb-6 pb-6 border-b border-zinc-800 relative z-10">
-        <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-2">
-          CLIENTE
-        </p>
-        <h3 className="text-2xl font-bold text-white mb-1">
-          {cita.clientName}
-        </h3>
-        <p className="text-zinc-400 font-mono text-sm">📞 {cita.clientPhone}</p>
-      </div>
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'PENDIENTE': return 'text-amber-500 bg-amber-500/10 border-amber-500/20';
+      case 'COMPLETADA': return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
+      case 'CANCELADA': return 'text-red-500 bg-red-500/10 border-red-500/20';
+      case 'NO_SHOW': return 'text-zinc-400 bg-zinc-800 border-zinc-700';
+      default: return 'text-zinc-500 bg-zinc-900 border-zinc-800';
+    }
+  };
 
-      <div className="space-y-3 mb-6 relative z-10">
-        <div className="flex flex-wrap gap-2">
-          {cita.services &&
-            cita.services.map((s, i) => (
-              <span
-                key={i}
-                className="px-2 py-1 bg-zinc-800/50 border border-zinc-700 rounded text-xs text-zinc-300"
-              >
-                {s.name}
-              </span>
-            ))}
-        </div>
-        <div>
-          <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-1">
-            PROFESIONAL
-          </p>
-          <p className="text-emerald-400 font-bold text-sm flex items-center gap-2">
-            {/* Corrección del nombre Admin */}
-            ✂️{" "}
-            {cita.barberName === "admin"
-              ? "Carlos Pérez (Admin)"
-              : cita.barberName || "Cualquiera"}
-          </p>
-        </div>
-      </div>
+  const generateTimeSlots = () => {
+    const times = [];
+    for (let i = 8; i <= 20; i++) { 
+      const period = i >= 12 ? 'PM' : 'AM';
+      let displayHour = i > 12 ? i - 12 : i;
+      if (displayHour === 0) displayHour = 12;
+      times.push({ value: `${i.toString().padStart(2, '0')}:00`, label: `${displayHour}:00 ${period}` });
+      if (i < 20) times.push({ value: `${i.toString().padStart(2, '0')}:30`, label: `${displayHour}:30 ${period}` });
+    }
+    return times;
+  };
 
-      <div className="flex justify-between items-center pt-4 border-t border-zinc-800 relative z-10">
-        <div className="flex flex-col gap-1">
-          {/* ETIQUETA DE ESTADO */}
-          <span
-            className={`px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded border w-fit
-                ${
-                  cita.status === "COMPLETADA"
-                    ? "bg-green-900/20 text-green-500 border-green-900"
-                    : cita.status === "CANCELADA"
-                      ? "bg-red-900/20 text-red-500 border-red-900"
-                      : cita.status === "PENDIENTE"
-                        ? "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
-                        : "bg-zinc-800 text-zinc-400 border-zinc-700"
-                }`}
-          >
-            {cita.status}
-          </span>
+  const renderTarjetaCita = (app: Appointment) => {
+    const isToday = new Date(app.appointmentDate).toDateString() === new Date().toDateString();
+    const displayBarber = app.barberName === 'admin' ? 'Carlos Pérez (Admin)' : app.barberName;
 
-          {/* NUEVA ETIQUETA: SOLO SI FUE REAGENDADA Y ESTÁ PENDIENTE */}
-          {cita.rescheduled && cita.status === "PENDIENTE" && (
-            <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest flex items-center gap-1 animate-pulse">
-              🔄 REAGENDADO
+    return (
+      <div key={app.id} className="bg-[#0a0a0a] border border-zinc-800 rounded-3xl overflow-hidden flex flex-col group hover:border-zinc-700 transition-colors">
+        <div className="px-6 py-4 border-b border-zinc-800/50 flex justify-between items-center bg-black/50">
+          <div className="flex items-center gap-2">
+            <span className={`px-3 py-1 rounded-md text-[9px] font-black uppercase tracking-widest border ${getStatusColor(app.status)}`}>
+              {app.status}
             </span>
+            {app.rescheduled && (
+              <span className="px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center gap-1">
+                🔄 Reagendado
+              </span>
+            )}
+          </div>
+          {app.status === 'PENDIENTE' && (
+            <button onClick={() => openModal(app)} className="text-xs font-bold text-zinc-400 hover:text-emerald-400 transition-colors uppercase tracking-widest">
+              Gestionar ➔
+            </button>
           )}
         </div>
 
-        <button
-          onClick={() => setSelectedCita(cita)}
-          className={`text-xs font-bold uppercase tracking-widest transition-colors cursor-pointer flex items-center gap-1
-                ${!isDimmed ? "text-white hover:text-emerald-400" : "text-zinc-600 hover:text-zinc-400"}
-            `}
-        >
-          {!isDimmed ? "GESTIONAR →" : "👁️ VER DETALLES"}
-        </button>
-      </div>
-    </div>
-  );
-
-  // --- 7. RENDERIZADO VISUAL ---
-  return (
-    <div className="min-h-screen bg-black text-white p-8 font-sans relative">
-      <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
-        
-        {/* HEADER */}
-        <div className="flex flex-col md:flex-row items-center justify-between mb-8 pb-6 border-b border-zinc-800 gap-6">
-          <div className="flex items-center gap-4 w-full md:w-auto">
-            <button onClick={() => router.push("/admin")} className="text-2xl p-3 bg-zinc-900 border border-zinc-700 rounded-full hover:bg-emerald-500 hover:text-black transition-all">⬅️</button>
+        <div className="p-6 flex-grow">
+          <div className="flex justify-between items-start mb-6">
             <div>
-              <h1 className="text-4xl font-black uppercase tracking-tighter">Agenda <span className="text-emerald-500">Maestra</span></h1>
-              <p className="text-zinc-400">Control de operaciones.</p>
+              <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Fecha</p>
+              <p className={`text-lg font-black capitalize ${isToday ? 'text-emerald-400' : 'text-white'}`}>
+                {isToday ? "HOY" : formatDate(app.appointmentDate)}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Hora</p>
+              <div className="bg-zinc-900 border border-zinc-700 px-3 py-1 rounded-lg">
+                <p className="text-xl font-black text-white">{formatTime(app.appointmentTime)}</p>
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 w-full md:w-auto">
-            <div className="flex flex-col">
+          <div className="mb-6">
+            <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Cliente</p>
+            <p className="text-2xl font-black text-white">{app.clientName}</p>
+            <a href={`https://wa.me/505${app.clientPhone.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-pink-500 hover:text-pink-400 font-mono text-sm mt-1 transition-colors">
+              📞 {app.clientPhone}
+            </a>
+          </div>
+
+          <div className="flex flex-wrap gap-2 mb-6 pb-6 border-b border-zinc-800/50">
+            {app.services.map(s => (
+              <span key={s.id} className="text-xs font-medium bg-zinc-900 text-zinc-300 border border-zinc-700 px-3 py-1.5 rounded-md">
+                {s.name}
+              </span>
+            ))}
+          </div>
+
+          <div>
+            <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Profesional</p>
+            <p className="text-sm font-bold text-emerald-500/80 uppercase tracking-wider flex items-center gap-2">
+              ✂️ {displayBarber}
+            </p>
+          </div>
+        </div>
+
+        {app.status === 'COMPLETADA' && (
+          <div className="bg-emerald-900/10 py-3 text-center border-t border-emerald-900/20">
+            <span className="text-emerald-500 text-xs font-black uppercase tracking-widest">✅ Historial Completado</span>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-black text-white p-8 font-sans">
+      <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+        
+        <div className="flex flex-col md:flex-row items-center justify-between mb-10 pb-6 border-b border-zinc-800 gap-4">
+            <div className="flex items-center gap-4 w-full md:w-auto">
+              <button onClick={() => router.push("/admin")} className="text-2xl p-3 bg-zinc-900 border border-zinc-700 rounded-full hover:bg-emerald-500 hover:text-black transition-all">⬅️</button>
+              <div>
+                <h1 className="text-4xl font-black uppercase tracking-tighter">Agenda <span className="text-emerald-500">Maestra</span></h1>
+                <p className="text-zinc-500 text-sm mt-1">Control de operaciones.</p>
+              </div>
+            </div>
+
+            <div className="flex flex-col w-full md:w-auto">
                 <label className="text-[10px] font-bold text-zinc-500 uppercase mb-1">Filtrar por:</label>
                 <select 
-                    className="bg-zinc-900 border border-zinc-700 text-white p-3 rounded-xl outline-none focus:border-emerald-500 font-bold uppercase"
+                    className="bg-zinc-900 border border-zinc-700 text-white px-4 py-3 rounded-xl outline-none focus:border-emerald-500 font-bold uppercase cursor-pointer min-w-[200px]"
                     value={filterBarber}
                     onChange={(e) => setFilterBarber(e.target.value)}
                 >
@@ -349,155 +295,144 @@ export default function CitasPage() {
                     ))}
                 </select>
             </div>
-          </div>
         </div>
 
-        {/* DASHBOARD MÉTRICAS */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-            <div className="bg-yellow-900/10 border border-yellow-700/30 p-4 rounded-xl flex flex-col items-center">
-                <span className="text-yellow-500 font-bold uppercase text-xs tracking-widest">Pendientes</span>
-                <span className="text-3xl font-black text-white">{stats.pendientes}</span>
-            </div>
-            <div className="bg-green-900/10 border border-green-700/30 p-4 rounded-xl flex flex-col items-center">
-                <span className="text-emerald-500 font-bold uppercase text-xs tracking-widest">Completadas</span>
-                <span className="text-3xl font-black text-white">{stats.completadas}</span>
-            </div>
-            <div className="bg-red-900/10 border border-red-700/30 p-4 rounded-xl flex flex-col items-center">
-                <span className="text-red-500 font-bold uppercase text-xs tracking-widest">Canceladas</span>
-                <span className="text-3xl font-black text-white">{stats.canceladas}</span>
-            </div>
-            <div className="bg-zinc-800/30 border border-zinc-700/30 p-4 rounded-xl flex flex-col items-center">
-                <span className="text-zinc-400 font-bold uppercase text-xs tracking-widest">No Asistió</span>
-                <span className="text-3xl font-black text-white">{stats.noShow}</span>
-            </div>
+          <div className="bg-[#1a1300] border border-amber-900/30 p-6 rounded-2xl flex flex-col items-center justify-center">
+            <span className="text-amber-500 font-black uppercase text-[10px] tracking-widest mb-2">Pendientes</span>
+            <span className="text-4xl font-black text-white">{citasPendientes.length}</span>
+          </div>
+          <div className="bg-[#001a09] border border-emerald-900/30 p-6 rounded-2xl flex flex-col items-center justify-center">
+            <span className="text-emerald-500 font-black uppercase text-[10px] tracking-widest mb-2">Completadas</span>
+            <span className="text-4xl font-black text-white">{citasCompletadas.length}</span>
+          </div>
+          <div className="bg-[#1a0000] border border-red-900/30 p-6 rounded-2xl flex flex-col items-center justify-center">
+            <span className="text-red-500 font-black uppercase text-[10px] tracking-widest mb-2">Canceladas</span>
+            <span className="text-4xl font-black text-white">{citasFiltradas.filter(a => a.status === 'CANCELADA').length}</span>
+          </div>
+          <div className="bg-[#0f0f0f] border border-zinc-800 p-6 rounded-2xl flex flex-col items-center justify-center">
+            <span className="text-zinc-400 font-black uppercase text-[10px] tracking-widest mb-2">No Asistió</span>
+            <span className="text-4xl font-black text-white">{citasFiltradas.filter(a => a.status === 'NO_SHOW').length}</span>
+          </div>
         </div>
 
-        {/* LOADING / ERROR */}
-        {loading && <div className="text-center py-20 text-emerald-500 animate-pulse font-bold">CARGANDO...</div>}
-        {errorMsg && <div className="text-center py-10 text-red-400 bg-red-900/20 rounded-xl border border-red-900/50">{errorMsg}</div>}
-
-        {!loading && !errorMsg && filteredAppointments.length === 0 && (
-           <div className="col-span-full text-center py-20 text-zinc-600 border-2 border-dashed border-zinc-800 rounded-3xl">
-             No hay citas registradas.
-           </div>
-        )}
-
-        {/* --- ESTANTE 1: PENDIENTES --- */}
-        {!loading && !errorMsg && pendingCitas.length > 0 && (
-          <div className="mb-12">
-             <div className="flex items-center gap-4 mb-6">
-                <div className="h-px bg-yellow-500/50 flex-1"></div>
-                <h3 className="text-yellow-500 font-black uppercase tracking-widest text-sm">📅 Próximas Citas (Pendientes)</h3>
-                <div className="h-px bg-yellow-500/50 flex-1"></div>
-             </div>
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {pendingCitas.map(cita => <CitaCard key={cita.id} cita={cita} />)}
-             </div>
-          </div>
-        )}
-
-        {/* --- ESTANTE 2: COMPLETADAS --- */}
-        {!loading && !errorMsg && completedCitas.length > 0 && (
-          <div className="mb-12 opacity-80 hover:opacity-100 transition-opacity duration-500">
-             <div className="flex items-center gap-4 mb-6">
+        {loading ? (
+          <div className="text-center py-20 text-emerald-500 animate-pulse font-bold">Sincronizando agenda...</div>
+        ) : error ? (
+          <div className="text-center py-20 text-red-500 bg-red-500/10 border border-red-500/20 rounded-2xl">Error al cargar agenda</div>
+        ) : (
+          <>
+            <div className="flex items-center justify-center gap-4 mb-8 mt-4">
                 <div className="h-px bg-zinc-800 flex-1"></div>
-                <h3 className="text-emerald-500 font-black uppercase tracking-widest text-sm">✅ Historial Completado</h3>
+                <h2 className="text-amber-500 font-black uppercase tracking-widest text-sm flex items-center gap-2">
+                    🗓️ Próximas Citas (Pendientes)
+                </h2>
                 <div className="h-px bg-zinc-800 flex-1"></div>
-             </div>
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {completedCitas.map(cita => <CitaCard key={cita.id} cita={cita} isDimmed={true} />)}
-             </div>
-          </div>
-        )}
+            </div>
 
-        {/* --- ESTANTE 3: OTROS --- */}
-        {!loading && !errorMsg && cancelledCitas.length > 0 && (
-          <div className="mb-12 opacity-60 hover:opacity-100 transition-opacity duration-500">
-             <div className="flex items-center gap-4 mb-6">
-                <div className="h-px bg-zinc-800 flex-1"></div>
-                <h3 className="text-zinc-500 font-black uppercase tracking-widest text-sm">🗑️ Canceladas / No Asistió</h3>
-                <div className="h-px bg-zinc-800 flex-1"></div>
-             </div>
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {cancelledCitas.map(cita => <CitaCard key={cita.id} cita={cita} isDimmed={true} />)}
-             </div>
-          </div>
-        )}
+            {citasPendientes.length === 0 ? (
+                <div className="text-center py-10 text-zinc-600 font-bold mb-10">No hay citas pendientes.</div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+                    {citasPendientes.map(renderTarjetaCita)}
+                </div>
+            )}
 
+            <div className="flex items-center justify-center gap-4 mb-8">
+                <div className="h-px bg-zinc-800 flex-1"></div>
+                <h2 className="text-emerald-500 font-black uppercase tracking-widest text-sm flex items-center gap-2">
+                    ✅ Citas Completadas
+                </h2>
+                <div className="h-px bg-zinc-800 flex-1"></div>
+            </div>
+
+            {citasCompletadas.length === 0 ? (
+                <div className="text-center py-10 text-zinc-600 font-bold mb-10">Aún no hay citas completadas.</div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+                    {citasCompletadas.map(renderTarjetaCita)}
+                </div>
+            )}
+
+            <div className="flex items-center justify-center gap-4 mb-8">
+                <div className="h-px bg-zinc-800 flex-1"></div>
+                <h2 className="text-zinc-500 font-black uppercase tracking-widest text-sm flex items-center gap-2">
+                    📚 Historial (Canceladas / No Asistió)
+                </h2>
+                <div className="h-px bg-zinc-800 flex-1"></div>
+            </div>
+
+            {citasHistorial.length === 0 ? (
+                <div className="text-center py-10 text-zinc-600 font-bold">El historial está vacío.</div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {citasHistorial.map(renderTarjetaCita)}
+                </div>
+            )}
+          </>
+        )}
       </div>
 
-      {/* --- MODAL (AHORA SÍ COMPLETO) --- */}
-      {selectedCita && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-            <div className="bg-[#111] border border-zinc-700 w-full max-w-md rounded-2xl p-8 shadow-2xl relative animate-in fade-in zoom-in duration-200">
-                <button onClick={closeModal} className="absolute top-4 right-4 text-zinc-500 hover:text-white">✕</button>
-                
-                <h2 className="text-2xl font-bold text-white mb-2">
-                    {/* Título cambia según la acción */}
-                    {isRescheduling ? '📅 Reagendar Cita' : (selectedCita.status === 'PENDIENTE' ? 'Gestionar Cita' : 'Detalles de Cita')}
-                </h2>
-                
-                <div className="mb-6 text-sm text-zinc-400 bg-zinc-900/50 p-4 rounded-xl border border-zinc-800">
-                    <p>Cliente: <span className="text-white font-bold">{selectedCita.clientName}</span></p>
-                    <p>Fecha Actual: <span className="text-white">{formatDate(selectedCita.appointmentDate)} a las {formatTime(selectedCita.appointmentTime)}</span></p>
-                </div>
-
-                {selectedCita.status === 'PENDIENTE' ? (
-                    <>
-                        {/* CARA A: BOTONES NORMALES */}
-                        {!isRescheduling ? (
-                            <div className="space-y-3">
-                                <button onClick={() => updateStatus("COMPLETADA")} disabled={processing} className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/20">✅ Marcar COMPLETADA</button>
-                                
-                                <button onClick={() => setIsRescheduling(true)} disabled={processing} className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20">📅 Reagendar Cita</button>
-
-                                <div className="grid grid-cols-2 gap-3">
-                                    <button onClick={() => updateStatus("CANCELADA")} disabled={processing} className="w-full py-3 bg-red-900/20 border border-red-900/50 hover:bg-red-900/40 text-red-400 font-bold rounded-xl">❌ Cancelar</button>
-                                    <button onClick={() => updateStatus("NO ASISTIÓ")} disabled={processing} className="w-full py-3 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 text-zinc-300 font-bold rounded-xl">⚠️ No Show</button>
-                                </div>
-                            </div>
-                        ) : (
-                            /* CARA B: FORMULARIO DE REAGENDAR */
-                            <div className="space-y-4 animate-in slide-in-from-right duration-200">
-                                <div>
-                                    <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase">Nueva Fecha</label>
-                                    <input 
-                                        type="date" 
-                                        style={{ colorScheme: "dark" }}
-                                        className="w-full bg-black border border-zinc-700 p-4 rounded-xl text-white focus:border-blue-500 outline-none"
-                                        onChange={(e) => setNewDate(e.target.value)}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase">Nueva Hora</label>
-                                    <select 
-                                        className="w-full bg-black border border-zinc-700 p-4 rounded-xl text-white focus:border-blue-500 outline-none"
-                                        onChange={(e) => setNewTime(e.target.value)}
-                                    >
-                                        <option value="">Selecciona hora</option>
-                                        {timeSlots.map((slot) => (
-                                            <option key={slot.value} value={slot.value}>{slot.label}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div className="flex gap-3 pt-2">
-                                    <button onClick={() => setIsRescheduling(false)} className="flex-1 py-3 bg-zinc-800 text-white font-bold rounded-xl hover:bg-zinc-700">Cancelar</button>
-                                    <button onClick={handleReschedule} disabled={!newDate || !newTime || processing} className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-500 disabled:opacity-50">💾 Guardar Cambio</button>
-                                </div>
-                            </div>
-                        )}
-                    </>
-                ) : (
-                    /* SOLO LECTURA SI YA NO ES PENDIENTE */
-                    <div className="text-center">
-                        <p className="text-zinc-500 italic mb-4">Cita procesada. Solo lectura.</p>
-                        <button onClick={() => updateStatus("PENDIENTE")} className="text-xs text-zinc-600 hover:text-zinc-300 underline">↺ Corregir (Volver a Pendiente)</button>
-                    </div>
-                )}
+      {isModalOpen && selectedAppt && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-[#0f0f0f] border border-zinc-800 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden relative">
+            
+            <div className="bg-zinc-900/50 p-6 border-b border-zinc-800 flex justify-between items-center">
+              <h2 className="text-2xl font-black text-white tracking-tighter">
+                {isRescheduleMode ? "🗓️ Reagendar Cita" : "Gestionar Cita"}
+              </h2>
+              <button onClick={closeModal} className="text-zinc-500 hover:text-white transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
             </div>
+
+            <div className="p-6 border-b border-zinc-800 bg-black/20">
+              <p className="text-sm text-zinc-400">Cliente: <span className="font-bold text-white">{selectedAppt.clientName}</span></p>
+              <p className="text-sm text-zinc-400 mt-1">Fecha Actual: {formatDate(selectedAppt.appointmentDate)} a las {formatTime(selectedAppt.appointmentTime)}</p>
+            </div>
+
+            <div className="p-6">
+              {!isRescheduleMode ? (
+                <div className="space-y-3">
+                  <button onClick={() => actualizarEstado(selectedAppt.id, 'COMPLETADA')} className="w-full py-4 bg-emerald-600 text-black font-black uppercase tracking-widest rounded-xl hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-900/20">
+                    ✅ Marcar COMPLETADA
+                  </button>
+                  <button onClick={() => setIsRescheduleMode(true)} className="w-full py-4 bg-blue-600 text-white font-black uppercase tracking-widest rounded-xl hover:bg-blue-500 transition-all shadow-lg shadow-blue-900/20">
+                    🗓️ Reagendar Cita
+                  </button>
+                  <div className="grid grid-cols-2 gap-3 pt-3 border-t border-zinc-800 mt-3">
+                    <button onClick={() => actualizarEstado(selectedAppt.id, 'CANCELADA')} className="py-4 bg-red-900/20 text-red-500 border border-red-900/50 font-bold rounded-xl hover:bg-red-900/40 transition-colors">
+                      ❌ Cancelar
+                    </button>
+                    <button onClick={() => actualizarEstado(selectedAppt.id, 'NO_SHOW')} className="py-4 bg-zinc-900 text-orange-500 border border-zinc-700 font-bold rounded-xl hover:bg-zinc-800 transition-colors">
+                      ⚠️ No Show
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-5">
+                  <div>
+                    <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">Nueva Fecha</label>
+                    <input type="date" style={{ colorScheme: "dark" }} className="w-full bg-black border-2 border-zinc-800 p-4 rounded-xl text-white focus:border-blue-500 outline-none font-bold transition-colors" value={newDate} onChange={(e) => setNewDate(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">Nueva Hora</label>
+                    <select className="w-full bg-black border-2 border-zinc-800 p-4 rounded-xl text-white focus:border-blue-500 outline-none font-bold appearance-none transition-colors" value={newTime} onChange={(e) => setNewTime(e.target.value)}>
+                      <option value="">Seleccionar Hora</option>
+                      {generateTimeSlots().map(slot => ( <option key={slot.value} value={slot.value}>{slot.label}</option> ))}
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 mt-8">
+                    <button onClick={() => setIsRescheduleMode(false)} className="py-4 bg-zinc-900 text-zinc-400 font-bold rounded-xl hover:bg-zinc-800 transition-colors">Cancelar</button>
+                    <button onClick={reagendarCita} className="py-4 bg-blue-600 text-white font-black rounded-xl hover:bg-blue-500 shadow-lg shadow-blue-900/30 transition-all">💾 Guardar Cambio</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
+
     </div>
   );
 }
-         
