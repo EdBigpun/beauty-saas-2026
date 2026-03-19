@@ -1,0 +1,39 @@
+{
+  "editor.fontSize": 14,
+  "editor.fontFamily": "Fira Code, Consolas, monospace",
+  "editor.fontLigatures": true,
+
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true
+  },
+
+  "eslint.validate": ["javascript", "javascriptreact"],
+  "eslint.format.enable": true,
+
+  "prettier.singleQuote": true,
+  "prettier.semi": false,
+
+  "editor.tabSize": 2,
+  "editor.wordWrap": "on",
+
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 1000,
+
+  "editor.minimap.enabled": false,
+
+  "workbench.iconTheme": "material-icon-theme",
+
+  "editor.cursorSmoothCaretAnimation": "on",
+  "editor.smoothScrolling": true,
+
+  "editor.inlineSuggest.enabled": true,
+
+  "git.autofetch": true,
+
+  "explorer.confirmDelete": false,
+
+  "editor.bracketPairColorization.enabled": true
+
+  "editor.defaultFormatter": "esbenp.prettier-vscode"
+}

@@ -16,3 +16,10 @@ const eslintConfig = defineConfig([
 ]);
 
 export default eslintConfig;
+
+
+import prettier from "eslint-config-prettier";
+
+export default [
+  prettier
+];
