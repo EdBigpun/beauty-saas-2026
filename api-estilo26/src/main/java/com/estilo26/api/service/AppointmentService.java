@@ -4,6 +4,7 @@ import com.estilo26.api.model.Appointment;
 import com.estilo26.api.model.Service;
 import com.estilo26.api.repository.AppointmentRepository;
 import com.estilo26.api.dto.ClientDTO;
+import com.estilo26.api.model.AppointmentStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.LocalDate;
@@ -39,14 +40,18 @@ public class AppointmentService {
             throw new RuntimeException("⚠️ Ese horario ya está reservado.");
         }
 
-        nuevaCita.setStatus("PENDIENTE");
+        // Llamamos directamente a la constante segura del Enum
+        nuevaCita.setStatus(AppointmentStatus.PENDIENTE);
         return appointmentRepository.save(nuevaCita);
     }
 
     public Appointment updateStatus(Long id, String newStatus) {
         return appointmentRepository.findById(id)
                 .map(cita -> {
-                    cita.setStatus(newStatus);
+                    // 1. Tomamos el texto de internet (newStatus)
+                    // 2. Lo forzamos a MAYÚSCULAS para evitar errores de tipeo.
+                    // 3. Lo convertimos (valueOf) en nuestro Enum seguro.
+                    cita.setStatus(AppointmentStatus.valueOf(newStatus.toUpperCase()));
                     return appointmentRepository.save(cita);
                 })
                 .orElseThrow(() -> new RuntimeException("Cita no encontrada con id: " + id));
@@ -74,7 +79,8 @@ public class AppointmentService {
         cita.setAppointmentDate(nuevaFecha);
         cita.setAppointmentTime(nuevaHora);
         cita.setEndTime(nuevaHora.plusMinutes(30));
-        cita.setStatus("PENDIENTE");
+        // Reasignamos el estado usando nuestro Enum estricto y seguro
+        cita.setStatus(AppointmentStatus.PENDIENTE);
 
         // --- AQUÍ ESTÁ LA MAGIA ---
         cita.setRescheduled(true);

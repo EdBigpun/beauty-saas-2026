@@ -1,31 +1,47 @@
 package com.estilo26.api.model;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Entity // (1)
-@Table(name = "users") // (2)
-@Data // (3)
+/**
+ * -------------------------------------------------------------
+ * Entidad User (Usuario del SaaS)
+ * Define a dueños, administradores y empleados.
+ * -------------------------------------------------------------
+ */
+@Entity
+@Table(name = "users")
+// Lombok: Genera getters, setters, constructores y patrón Builder
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // (4) Nombre de usuario único. No permitimos dos "juan.perez".
     @Column(nullable = false, unique = true)
     private String username;
 
-    // (5) La contraseña irá encriptada, por eso no limitamos el largo.
     @Column(nullable = false)
-    private String password;
+    private String password; // Se guardará encriptada con BCrypt en el futuro
 
-    // (6) Vital para recuperación de contraseña (Soporte).
-    @Column(nullable = false, unique = true)
+    @Column(unique = true)
     private String email;
 
-    // (7) Roles: "ADMIN" o "BARBER"
-    // Esto nos permitirá filtrar qué puede ver cada quién.
+    // Los roles ahora soportan la expansión del SaaS (ADMIN, MANAGER, BARBERO, etc.)
     @Column(nullable = false)
     private String role;
+
+    // --- NUEVO: ESTRATEGIA DE SOFT DELETE (BORRADO LÓGICO) ---
+    // En lugar de borrar de la DB, lo marcaremos como "inactivo".
+    // Esto previene que se rompan estadísticas financieras pasadas si despedimos a un barbero.
+    @Builder.Default // Lombok: Asegura que al crear con Builder, inicie en true
+    @Column
+    private boolean isActive = true;
 }

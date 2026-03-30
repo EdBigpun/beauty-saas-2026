@@ -1,31 +1,53 @@
 package com.estilo26.api.model;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.math.BigDecimal;
 
+/**
+ * -------------------------------------------------------------
+ * Entidad Appointment (Cita / Registro Financiero)
+ * Este es el corazón transaccional del SaaS. Ahora maneja dinero.
+ * -------------------------------------------------------------
+ */
 @Entity
 @Table(name = "appointments")
+// Reemplazamos los getters/setters manuales por Lombok para mantener consistencia y limpieza
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Appointment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // Datos del Cliente (En el futuro, esto debería ser su propia tabla Client.java)
+    @Column(nullable = false)
     private String clientName;
     private String clientPhone;
 
+    // Cronología
+    @Column(nullable = false)
     private LocalDate appointmentDate;
+    @Column(nullable = false)
     private LocalTime appointmentTime;
-    private LocalTime endTime;
+    private LocalTime endTime; // Se llena cuando el barbero termina el servicio
 
-    // --- SOLUCIÓN AL ERROR DE BASE DE DATOS ---
-    // Le decimos a PostgreSQL que ponga "false" por defecto a las citas viejas
+    @Builder.Default
     @Column(columnDefinition = "boolean default false")
     private boolean rescheduled = false;
 
-    @ManyToMany
+    // Relación: Una cita puede tener múltiples servicios (Corte + Barba)
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "appointment_services",
             joinColumns = @JoinColumn(name = "appointment_id"),
@@ -33,38 +55,38 @@ public class Appointment {
     )
     private List<Service> services;
 
-    private String status = "PENDIENTE";
+    // Estado controlado por Enum (Seguridad contra errores de tipeo)
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    @Column(nullable = false)
+    private AppointmentStatus status = AppointmentStatus.PENDIENTE;
+
+    // Guardamos el nombre del barbero temporalmente (Idealmente, sería una relación ManyToOne con User.java)
     private String barberName;
 
-    public Appointment() {}
+    // ==========================================
+    // --- NUEVO: NÚCLEO FINANCIERO ---
+    // Variables indispensables para calcular rentabilidad y caja diaria
+    // ==========================================
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    // Método de pago estandarizado
+    // Cuánto se le cobró en total por los servicios
+    @Builder.Default
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal totalServicesCost = BigDecimal.ZERO;
 
-    public String getClientName() { return clientName; }
-    public void setClientName(String clientName) { this.clientName = clientName; }
+    // Propina que dejó el cliente
+    @Builder.Default
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal tipAmount = BigDecimal.ZERO;
 
-    public String getClientPhone() { return clientPhone; }
-    public void setClientPhone(String clientPhone) { this.clientPhone = clientPhone; }
+    // Descuentos aplicados
+    @Builder.Default
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal discountApplied = BigDecimal.ZERO;
 
-    public LocalDate getAppointmentDate() { return appointmentDate; }
-    public void setAppointmentDate(LocalDate appointmentDate) { this.appointmentDate = appointmentDate; }
-
-    public LocalTime getAppointmentTime() { return appointmentTime; }
-    public void setAppointmentTime(LocalTime appointmentTime) { this.appointmentTime = appointmentTime; }
-
-    public LocalTime getEndTime() { return endTime; }
-    public void setEndTime(LocalTime endTime) { this.endTime = endTime; }
-
-    public boolean isRescheduled() { return rescheduled; }
-    public void setRescheduled(boolean rescheduled) { this.rescheduled = rescheduled; }
-
-    public List<Service> getServices() { return services; }
-    public void setServices(List<Service> services) { this.services = services; }
-
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
-
-    public String getBarberName() { return barberName; }
-    public void setBarberName(String barberName) { this.barberName = barberName; }
+    // Suma final que entró a caja
+    @Builder.Default
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal finalTotalPaid = BigDecimal.ZERO;
 }
