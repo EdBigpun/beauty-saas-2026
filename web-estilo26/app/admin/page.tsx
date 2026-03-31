@@ -155,7 +155,7 @@ export default function AdminPanel() {
           <div>
             <h1 className="text-4xl font-bold">Panel de Control</h1>
             <p className="text-emerald-400 mt-1">
-              Sesión activa: {username || "Admin"}
+              Sesión activa: {username || "Admin SaaS"}
             </p>
           </div>
           <button
@@ -174,6 +174,32 @@ export default function AdminPanel() {
             width: "100%",
           }}
         >
+
+          {/* TARJETA: AGENDA CENTRAL (NUEVA) */}
+          <div
+            onClick={() => router.push("/admin/agenda")}
+            className="group bg-white/5 border border-white/10 p-8 rounded-2xl cursor-pointer hover:bg-white/10 hover:-translate-y-2 transition-all shadow-[0_0_20px_rgba(75,230,203,0.05)] hover:shadow-[0_0_30px_rgba(75,230,203,0.1)]"
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-start",
+              textAlign: "left",
+              minHeight: "300px",
+            }}
+          >
+            {/* Usamos verde esmeralda para la agenda principal */}
+            <div className="text-4xl mb-4 bg-emerald-500/20 w-16 h-16 rounded-full flex items-center justify-center text-emerald-400">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
+            </div>
+            <h2 className="text-2xl font-bold mb-2 text-white">Agenda Central</h2>
+            <p className="text-gray-400 text-sm mb-6 leading-relaxed flex-1">
+              Control de citas, bloqueos de horario y asignación de clientes por barbero.
+            </p>
+            <span className="text-emerald-400 font-bold tracking-widest uppercase text-sm group-hover:pl-2 transition-all">
+              Gestionar Citas &rarr;
+            </span>
+          </div>
+
           <div
             onClick={() => router.push("/admin/servicios")}
             className="group bg-white/5 border border-white/10 p-8 rounded-2xl cursor-pointer hover:bg-white/10 hover:-translate-y-2 transition-all"
