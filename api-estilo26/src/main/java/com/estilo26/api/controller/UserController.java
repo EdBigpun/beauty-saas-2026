@@ -8,33 +8,63 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@RestController // 1. Indica que este atiende peticiones web (JSON)
-@RequestMapping("/api/users") // 2. ¡AQUÍ ESTÁ LA DIRECCIÓN! Define la puerta de entrada.
+@RestController // Indica que este controlador atiende peticiones web devolviendo JSON
+@RequestMapping("/api/users") // La ruta base (http://localhost:9090/api/users)
 public class UserController {
 
     @Autowired
-    private UserService userService; // Conectamos con el Barbero
+    private UserService userService; // Conectamos con el Cerebro (Service)
 
-    // CUANDO EL FRONTEND PIDE VER LA LISTA (GET)
+    // ==========================================
+    // PUERTA 1: LEER TODOS (GET)
+    // ==========================================
     @GetMapping
     public List<User> getAllUsers() {
-        // El recepcionista le pide la lista al Barbero y se la da al cliente
-        return userService.findAll();
+        // Pedimos solo los activos
+        return userService.findAllActive();
     }
 
-    // CUANDO EL FRONTEND QUIERE CREAR UNO NUEVO (POST)
+    // ==========================================
+    // PUERTA 2: CREAR NUEVO (POST)
+    // ==========================================
     @PostMapping
     public ResponseEntity<User> createUser(@RequestBody User user) {
         try {
-            // Recibimos los datos del Frontend (@RequestBody)
-            // Se los pasamos al Barbero para que encripte y guarde
             User newUser = userService.saveUser(user);
-
-            // Respondemos "200 OK" y devolvemos el usuario creado
             return ResponseEntity.ok(newUser);
         } catch (Exception e) {
-            // Si algo falla, decimos "400 Bad Request"
             return ResponseEntity.badRequest().build();
+        }
+    }
+
+    // ==========================================
+    // PUERTA 3: EDITAR EXISTENTE (PUT)
+    // ==========================================
+    // El {id} significa que la URL será tipo: /api/users/5
+    @PutMapping("/{id}")
+    public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User updatedUser) {
+        try {
+            // Le pasamos el ID de la URL y los datos del cuerpo (JSON) al Cerebro
+            User savedUser = userService.updateUser(id, updatedUser);
+            return ResponseEntity.ok(savedUser);
+        } catch (RuntimeException e) {
+            // Si el Cerebro dice "No encontrado", devolvemos error 404 Not Found
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    // ==========================================
+    // PUERTA 4: ELIMINAR (SOFT DELETE)
+    // ==========================================
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+        try {
+            // Ejecutamos el borrado lógico
+            userService.softDeleteUser(id);
+            // Devolvemos 200 OK, pero sin cuerpo de respuesta (Void)
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
         }
     }
 }

@@ -41,7 +41,7 @@ public class User {
     // --- NUEVO: ESTRATEGIA DE SOFT DELETE (BORRADO LÓGICO) ---
     // En lugar de borrar de la DB, lo marcaremos como "inactivo".
     // Esto previene que se rompan estadísticas financieras pasadas si despedimos a un barbero.
-    @Builder.Default // Lombok: Asegura que al crear con Builder, inicie en true
-    @Column
-    private boolean isActive = true;
+    @Builder.Default
+    @Column(nullable = false)
+    private Boolean isActive = true;
 }

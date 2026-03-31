@@ -2,6 +2,7 @@ package com.estilo26.api.controller;
 
 import com.estilo26.api.model.User;
 import com.estilo26.api.repository.UserRepository;
+import com.estilo26.api.dto.LoginRequestDTO; //Nuevo
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -26,22 +27,25 @@ public class AuthController {
     // (5) EL ENDPOINT DE LOGIN
     // Recibe un usuario (datos del formulario) y decide si dejarlo pasar
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody User loginRequest) {
+    // ¡CAMBIO CLAVE! Usamos LoginRequestDTO en lugar de User
+    public ResponseEntity<?> login(@RequestBody LoginRequestDTO loginRequest) {
 
-        // A. Buscamos al usuario por su nombre (ej: "admin")
+        // A. Buscamos al usuario por su nombre
         Optional<User> userOptional = userRepository.findByUsername(loginRequest.getUsername());
 
         if (userOptional.isPresent()) {
             User userDb = userOptional.get();
 
-            // B. VERIFICACIÓN DE CONTRASEÑA (La parte clave)
-            // Comparamos la clave que escribió el usuario (loginRequest.getPassword())
-            // con la clave encriptada que tenemos guardada (userDb.getPassword())
-            // Usamos .matches() porque no podemos desencriptar el hash, solo compararlo.
+            // B. VERIFICACIÓN DE CONTRASEÑA
             if (passwordEncoder.matches(loginRequest.getPassword(), userDb.getPassword())) {
 
-                // C. Si coincide: ¡ÉXITO!
-                // Por ahora devolvemos "OK". En el futuro aquí devolveremos un Token JWT.
+                // --- NUEVO FILTRO DE SEGURIDAD ---
+                // Si la clave es correcta, pero el usuario fue eliminado (Soft Delete), no lo dejamos pasar.
+                if (userDb.getIsActive() != null && !userDb.getIsActive()) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Usuario desactivado");
+                }
+
+                // C. Si coincide y está activo: ¡ÉXITO!
                 return ResponseEntity.ok("Login Exitoso");
             }
         }
