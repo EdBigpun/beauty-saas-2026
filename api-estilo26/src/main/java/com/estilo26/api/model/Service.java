@@ -44,5 +44,5 @@ public class Service {
     // Evita romper citas pasadas que incluyeron un servicio que ya no ofrecemos
     @Builder.Default
     @Column(nullable = false)
-    private boolean isActive = true;
+    private Boolean isActive = true; // <-- La magia de la "B" mayúscula (Wrapper Class)
 }

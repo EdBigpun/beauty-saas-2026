@@ -12,11 +12,19 @@ public class ServiceService {
     @Autowired
     private ServiceRepository serviceRepository;
 
+    // -------------------------------------------------------------
+    // EL CAMBIO PRINCIPAL ESTÁ AQUÍ
+    // -------------------------------------------------------------
     public List<Service> getAllServices() {
-        return serviceRepository.findAll();
+        // ANTES: return serviceRepository.findAll(); (Esto traía los zombies)
+        // AHORA: Usamos la función que inventamos en el Paso 1.
+        return serviceRepository.findByIsActiveTrueOrderByIdAsc();
     }
 
     public Service createService(Service service) {
+        if (service.getIsActive() == null) {
+            service.setIsActive(true);
+        }
         return serviceRepository.save(service);
     }
 
@@ -31,8 +39,12 @@ public class ServiceService {
         }).orElseThrow(() -> new RuntimeException("Servicio no encontrado"));
     }
 
-    // --- LA LÓGICA DE ELIMINAR ---
     public void deleteService(Long id) {
-        serviceRepository.deleteById(id);
+        Service existingService = serviceRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Servicio no encontrado con ID: " + id));
+
+        // El Soft Delete: Solo le quitamos la "vida" poniéndolo en false.
+        existingService.setIsActive(false);
+        serviceRepository.save(existingService);
     }
 }
