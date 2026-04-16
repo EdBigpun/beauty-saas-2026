@@ -54,33 +54,29 @@ export default function AgendaPage() {
     toZonedTime(new Date(), TIMEZONE),
   )
 
-  // ESTADOS DE DATOS REALES (Base de Datos)
   const [dbBarberos, setDbBarberos] = useState<Empleado[]>([])
   const [dbServicios, setDbServicios] = useState<Servicio[]>([])
 
-  // Estado para el filtro principal (Afuera)
   const [isMainDropdownOpen, setIsMainDropdownOpen] = useState(false)
   const [selectedMainBarberId, setSelectedMainBarberId] = useState('ALL')
 
   // ==========================================
-  // ESTADOS DEL MODAL Y SUS MENÚS DESPLEGABLES CUSTOM
+  // ESTADOS DEL MODAL
   // ==========================================
   const [isModalOpen, setIsModalOpen] = useState(false)
 
-  // Datos del formulario
   const [formClientName, setFormClientName] = useState('')
   const [formClientPhone, setFormClientPhone] = useState('')
   const [formServiceId, setFormServiceId] = useState('')
   const [formEmployeeId, setFormEmployeeId] = useState('')
   const [formTime, setFormTime] = useState('')
 
-  // Interruptores para abrir/cerrar los menús bonitos dentro del Modal
   const [isServiceDropdownOpen, setIsServiceDropdownOpen] = useState(false)
   const [isBarberDropdownOpen, setIsBarberDropdownOpen] = useState(false)
   const [isTimeDropdownOpen, setIsTimeDropdownOpen] = useState(false)
 
   // ==========================================
-  // EFECTOS (Eager Loading - Conexión Real)
+  // EFECTOS (Carga de Datos)
   // ==========================================
   useEffect(() => {
     const token = localStorage.getItem('adminToken')
@@ -98,7 +94,6 @@ export default function AgendaPage() {
           const users: Empleado[] = await resUsers.json()
           const services: Servicio[] = await resServices.json()
 
-          // SOLUCIÓN AL BARBERO FANTASMA: Usamos toUpperCase() para ignorar errores de minúsculas
           const staffOperativo = users.filter((u) => {
             const rolNormalizado = u.role.toUpperCase()
             return rolNormalizado === 'ADMIN' || rolNormalizado === 'BARBERO'
@@ -152,7 +147,6 @@ export default function AgendaPage() {
 
   const timeSlots = generateTimeSlots()
 
-  // Función para abrir el Modal y resetear todos los menús
   const openModalWithTime = (horaMilitar: string = '') => {
     setFormTime(horaMilitar)
     setFormClientName('')
@@ -165,7 +159,64 @@ export default function AgendaPage() {
     setIsModalOpen(true)
   }
 
-  // Ayudantes para mostrar los nombres seleccionados en los menús custom
+  // ==========================================
+  // LA EMPAQUETADORA DE DATOS (NUEVO)
+  // ==========================================
+  const handleGuardarCita = async () => {
+    // 1. Validamos que no falten datos
+    if (!formClientName || !formServiceId || !formEmployeeId || !formTime) {
+      alert(
+        '⚠️ Faltan datos: Por favor llena el Nombre, Servicio, Barbero y Hora.',
+      )
+      return
+    }
+
+    // 2. Preparamos los datos para que Java los acepte
+    const fechaFormateada = format(selectedDate, 'yyyy-MM-dd')
+    const barberoSeleccionado = dbBarberos.find(
+      (b) => b.id.toString() === formEmployeeId,
+    )
+    const nombreBarbero = barberoSeleccionado
+      ? barberoSeleccionado.username
+      : 'Sin Asignar'
+
+    // 3. Construimos la caja JSON (El Payload)
+    const payload = {
+      clientName: formClientName,
+      clientPhone: formClientPhone,
+      appointmentDate: fechaFormateada,
+      appointmentTime: `${formTime}:00`, // Formato HH:MM:SS
+      barberName: nombreBarbero,
+      services: [{ id: parseInt(formServiceId) }],
+    }
+
+    // 4. Enviamos a Java
+    try {
+      const res = await fetch('http://localhost:9090/api/appointments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      if (res.ok) {
+        alert('✅ Cita guardada exitosamente en la Base de Datos.')
+        setIsModalOpen(false)
+        // Reseteamos el formulario
+        setFormClientName('')
+        setFormClientPhone('')
+        setFormServiceId('')
+        setFormEmployeeId('')
+      } else {
+        const errorText = await res.text()
+        alert(`❌ Error del Servidor: ${errorText}`)
+      }
+    } catch (error) {
+      console.error('Error de conexión:', error)
+      alert('Error crítico: No se pudo conectar con el servidor Java.')
+    }
+  }
+
+  // Ayudantes para mostrar los nombres seleccionados en los menús
   const selectedService = dbServicios.find(
     (s) => s.id.toString() === formServiceId,
   )
@@ -238,7 +289,7 @@ export default function AgendaPage() {
             </button>
           </div>
 
-          {/* FILTRO PRINCIPAL (Ahora usando datos reales de dbBarberos) */}
+          {/* FILTRO PRINCIPAL */}
           <div className="flex items-center gap-3 w-full md:w-auto bg-black/40 p-2 rounded-xl border border-[#4BE6CB]/20 relative">
             <span className="text-xs uppercase tracking-widest font-black text-[#4BE6CB] pl-2 flex items-center gap-2">
               Agenda de:
@@ -330,7 +381,7 @@ export default function AgendaPage() {
       </div>
 
       {/* ============================================================================ */}
-      {/* MODAL INTELIGENTE (CUSTOM DROPDOWNS) */}
+      {/* MODAL INTELIGENTE */}
       {/* ============================================================================ */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
@@ -377,7 +428,7 @@ export default function AgendaPage() {
                 </div>
               </div>
 
-              {/* FILA 2: Servicio (CUSTOM DROPDOWN) */}
+              {/* FILA 2: Servicio */}
               <div className="relative z-30">
                 <label className="text-[#4BE6CB] text-xs uppercase tracking-widest font-bold mb-2 flex items-center gap-1 ml-1">
                   <ScissorsSquare className="w-3 h-3" /> Servicio a Realizar
@@ -434,9 +485,8 @@ export default function AgendaPage() {
                 )}
               </div>
 
-              {/* FILA 3: Barbero y Hora (CUSTOM DROPDOWNS) */}
+              {/* FILA 3: Barbero y Hora */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Custom Dropdown: Barbero */}
                 <div className="relative z-20">
                   <label className="text-zinc-400 text-xs uppercase tracking-widest font-bold mb-2 flex items-center gap-1 ml-1">
                     <Users className="w-3 h-3" /> Asignar a Barbero
@@ -482,7 +532,6 @@ export default function AgendaPage() {
                   )}
                 </div>
 
-                {/* Custom Dropdown: Hora */}
                 <div className="relative z-10">
                   <label className="text-zinc-400 text-xs uppercase tracking-widest font-bold mb-2 flex items-center gap-1 ml-1">
                     <Clock className="w-3 h-3" /> Hora de Inicio
@@ -533,9 +582,10 @@ export default function AgendaPage() {
               >
                 Cancelar
               </button>
+              {/* EL BOTÓN AHORA TIENE EL EVENTO onClick CONECTADO */}
               <button
-                // AÚN NO CONECTADO, pero ya listo para la siguiente fase
-                className="flex-1 py-3 bg-[#4BE6CB] text-black font-bold uppercase text-sm rounded-xl hover:bg-[#3bc4ac] hover:scale-[1.02] transition-all shadow-[0_0_15px_rgba(75,230,203,0.2)]"
+                onClick={handleGuardarCita}
+                className="flex-1 py-3 bg-[#4BE6CB] text-black font-bold uppercase text-sm rounded-xl hover:bg-[#3bc4ac] hover:scale-[1.02] active:scale-95 transition-all shadow-[0_0_15px_rgba(75,230,203,0.2)]"
               >
                 Guardar Cita
               </button>

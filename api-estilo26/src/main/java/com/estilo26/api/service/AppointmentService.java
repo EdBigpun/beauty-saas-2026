@@ -3,13 +3,16 @@ package com.estilo26.api.service;
 import com.estilo26.api.model.Appointment;
 import com.estilo26.api.model.Service;
 import com.estilo26.api.repository.AppointmentRepository;
+import com.estilo26.api.repository.ServiceRepository;
 import com.estilo26.api.dto.ClientDTO;
 import com.estilo26.api.model.AppointmentStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.math.BigDecimal; // IMPORTACIÓN NECESARIA PARA LOS CEROS FINANCIEROS
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @org.springframework.stereotype.Service
 public class AppointmentService {
@@ -17,20 +20,53 @@ public class AppointmentService {
     @Autowired
     private AppointmentRepository appointmentRepository;
 
+    @Autowired
+    private ServiceRepository serviceRepository;
+
     public List<Appointment> getAllAppointments() {
         return appointmentRepository.findAll();
     }
 
     public Appointment createAppointment(Appointment nuevaCita) {
-        int totalMinutes = nuevaCita.getServices().stream()
-                .mapToInt(Service::getDurationMinutes)
+
+        // =========================================================
+        // ESCUDO DE DEFENSA (NUEVO)
+        // Protegemos a la base de datos seteando en CERO los campos
+        // financieros que llegan vacíos al momento de crear una cita.
+        // =========================================================
+        if (nuevaCita.getTotalServicesCost() == null) nuevaCita.setTotalServicesCost(BigDecimal.ZERO);
+        if (nuevaCita.getTipAmount() == null) nuevaCita.setTipAmount(BigDecimal.ZERO);
+        if (nuevaCita.getDiscountApplied() == null) nuevaCita.setDiscountApplied(BigDecimal.ZERO);
+        if (nuevaCita.getFinalTotalPaid() == null) nuevaCita.setFinalTotalPaid(BigDecimal.ZERO);
+
+        // También protegemos la variable de reprogramación
+        if (nuevaCita.getRescheduled() == null) nuevaCita.setRescheduled(false);
+        // =========================================================
+
+        // 1. Extraer solo los IDs que mandó React
+        List<Long> serviceIds = nuevaCita.getServices().stream()
+                .map(Service::getId)
+                .collect(Collectors.toList());
+
+        // 2. Buscar los servicios COMPLETOS en PostgreSQL
+        List<Service> realServices = serviceRepository.findAllById(serviceIds);
+
+        // 3. Asignar esos servicios reales a la cita
+        nuevaCita.setServices(realServices);
+
+        // 4. Calcular el tiempo total usando los datos reales
+        int totalMinutes = realServices.stream()
+                .mapToInt(s -> s.getDurationMinutes() != null ? s.getDurationMinutes() : 30)
                 .sum();
+
         if (totalMinutes == 0) totalMinutes = 30;
 
+        // 5. Calcular la hora en que el cliente saldrá de la silla
         LocalTime horaInicio = nuevaCita.getAppointmentTime();
         LocalTime horaFin = horaInicio.plusMinutes(totalMinutes);
         nuevaCita.setEndTime(horaFin);
 
+        // 6. Verificar si la hora está libre
         boolean ocupado = appointmentRepository.existsByAppointmentDateAndAppointmentTime(
                 nuevaCita.getAppointmentDate(),
                 nuevaCita.getAppointmentTime()
@@ -40,7 +76,7 @@ public class AppointmentService {
             throw new RuntimeException("⚠️ Ese horario ya está reservado.");
         }
 
-        // Llamamos directamente a la constante segura del Enum
+        // 7. Sellar como pendiente y guardar
         nuevaCita.setStatus(AppointmentStatus.PENDIENTE);
         return appointmentRepository.save(nuevaCita);
     }
@@ -48,9 +84,6 @@ public class AppointmentService {
     public Appointment updateStatus(Long id, String newStatus) {
         return appointmentRepository.findById(id)
                 .map(cita -> {
-                    // 1. Tomamos el texto de internet (newStatus)
-                    // 2. Lo forzamos a MAYÚSCULAS para evitar errores de tipeo.
-                    // 3. Lo convertimos (valueOf) en nuestro Enum seguro.
                     cita.setStatus(AppointmentStatus.valueOf(newStatus.toUpperCase()));
                     return appointmentRepository.save(cita);
                 })
@@ -79,17 +112,12 @@ public class AppointmentService {
         cita.setAppointmentDate(nuevaFecha);
         cita.setAppointmentTime(nuevaHora);
         cita.setEndTime(nuevaHora.plusMinutes(30));
-        // Reasignamos el estado usando nuestro Enum estricto y seguro
         cita.setStatus(AppointmentStatus.PENDIENTE);
-
-        // --- AQUÍ ESTÁ LA MAGIA ---
         cita.setRescheduled(true);
 
         return appointmentRepository.save(cita);
     }
 
-    // --- NUEVO: OBTENER CLIENTES VIP ---
-    // Este método es el "Chef" pidiéndole al "Almacén" (Repository) la lista agrupada.
     public List<ClientDTO> getVIPClients() {
         return appointmentRepository.findTopVIPClients();
     }
