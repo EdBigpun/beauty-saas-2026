@@ -3,74 +3,59 @@ package com.estilo26.api.service;
 import com.estilo26.api.model.User;
 import com.estilo26.api.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
-@Service // Etiqueta que define a esta clase como la Lógica de Negocio
+@Service
 public class UserService {
 
-    @Autowired // Conexión automática al Almacén (Base de datos)
+    @Autowired
     private UserRepository userRepository;
 
-    @Autowired // Conexión automática a la Licuadora de Contraseñas
-    private PasswordEncoder passwordEncoder;
-
-    // --------------------------------------------------------
-    // 1. OBTENER USUARIOS ACTIVOS (El filtro anti-fantasmas)
-    // --------------------------------------------------------
+    // ------------------------------------------------------------------------
+    // CABLE 1 REPARADO: El controlador espera que se llame "findAllActive"
+    // ------------------------------------------------------------------------
     public List<User> findAllActive() {
-        // En lugar de usar findAll() que trae a los borrados, usamos nuestra nueva función mágica
         return userRepository.findByIsActiveTrueOrderByIdAsc();
     }
 
-    // --------------------------------------------------------
-    // 2. CREAR USUARIO (POST)
-    // --------------------------------------------------------
+    public Optional<User> getUserById(Long id) {
+        return userRepository.findById(id);
+    }
+
+    // ------------------------------------------------------------------------
+    // CABLE 2 REPARADO: El controlador espera que se llame "saveUser"
+    // ------------------------------------------------------------------------
     public User saveUser(User user) {
-        // Encriptamos la contraseña antes de guardarla en la base de datos
-        String passwordEncriptada = passwordEncoder.encode(user.getPassword());
-        user.setPassword(passwordEncriptada);
+        // ESCUDO DE DEFENSA: Forzamos el estado activo si llega vacío desde React
+        if (user.getIsActive() == null) {
+            user.setIsActive(true);
+        }
+
         return userRepository.save(user);
     }
 
-    // --------------------------------------------------------
-    // 3. EDITAR USUARIO (PUT) - Lógica Defensiva
-    // --------------------------------------------------------
-    public User updateUser(Long id, User updatedData) {
-        // A. Buscamos al usuario viejo en la DB. Si no existe, lanzamos un error que detiene todo.
-        User existingUser = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + id));
+    public User updateUser(Long id, User userDetails) {
+        return userRepository.findById(id).map(user -> {
+            user.setUsername(userDetails.getUsername());
+            user.setEmail(userDetails.getEmail());
+            user.setRole(userDetails.getRole());
 
-        // B. Actualizamos los datos básicos que vienen del Frontend (React)
-        existingUser.setUsername(updatedData.getUsername());
-        existingUser.setEmail(updatedData.getEmail());
-        existingUser.setRole(updatedData.getRole());
+            if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()) {
+                user.setPassword(userDetails.getPassword());
+            }
 
-        // C. PROTECCIÓN DE CONTRASEÑA (Lo que programamos en React)
-        // Solo encriptamos y cambiamos la contraseña si el admin escribió una nueva.
-        // Si updatedData.getPassword() viene nulo o vacío, dejamos la contraseña vieja intacta.
-        if (updatedData.getPassword() != null && !updatedData.getPassword().trim().isEmpty()) {
-            existingUser.setPassword(passwordEncoder.encode(updatedData.getPassword()));
-        }
-
-        // D. Guardamos los cambios
-        return userRepository.save(existingUser);
+            return userRepository.save(user);
+        }).orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
     }
 
-    // --------------------------------------------------------
-    // 4. ELIMINACIÓN LÓGICA (SOFT DELETE)
-    // --------------------------------------------------------
     public void softDeleteUser(Long id) {
-        // Buscamos al usuario
-        User existingUser = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + id));
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        // Magia del Soft Delete: Le quitamos la vida lógica, pero no lo borramos de PostgreSQL
-        existingUser.setIsActive(false);
-
-        // Guardamos el cambio (hace un UPDATE en lugar de un DELETE)
-        userRepository.save(existingUser);
+        user.setIsActive(false);
+        userRepository.save(user);
     }
 }

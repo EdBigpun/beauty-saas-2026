@@ -1,16 +1,33 @@
-"use client";
+'use client'
 
 // 1. IMPORTACIONES
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { ShieldAlert, Scissors, UserPlus, Loader2, Mail, Pencil, Trash2, ArrowLeft, Eye, EyeOff, Lock, Info, Plus, CalendarDays, SprayCan, GraduationCap } from "lucide-react";
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import {
+  ShieldAlert,
+  Scissors,
+  UserPlus,
+  Loader2,
+  Mail,
+  Pencil,
+  Trash2,
+  ArrowLeft,
+  Eye,
+  EyeOff,
+  Lock,
+  Info,
+  Plus,
+  CalendarDays,
+  SprayCan,
+  GraduationCap,
+} from 'lucide-react'
 
 // 2. CONTRATO DE DATOS
 interface User {
-  id: number;
-  username: string;
-  role: string;
-  email?: string;
+  id: number
+  username: string
+  role: string
+  email?: string
 }
 
 export default function UsuariosPage() {
@@ -401,6 +418,8 @@ export default function UsuariosPage() {
                   onChange={(e) => setNewUser(e.target.value)}
                   className="w-full bg-zinc-900/50 border border-zinc-700 p-4 rounded-xl text-white focus:border-[#4BE6CB] outline-none text-base"
                   required
+                  // AQUÍ ESTÁ EL PLACEHOLDER QUE PEDISTE PARA CREAR
+                  placeholder="Ejemplo: Obi-Wan Kenobi"
                 />
               </div>
               <div>
@@ -413,6 +432,8 @@ export default function UsuariosPage() {
                   onChange={(e) => setNewEmail(e.target.value)}
                   className="w-full bg-zinc-900/50 border border-zinc-700 p-4 rounded-xl text-white focus:border-[#4BE6CB] outline-none text-base"
                   required
+                  // AQUÍ ESTÁ EL PLACEHOLDER QUE PEDISTE PARA CREAR
+                  placeholder="nombre@estilo26.com"
                 />
               </div>
               <div>
@@ -508,6 +529,8 @@ export default function UsuariosPage() {
                   onChange={(e) => setEditUser(e.target.value)}
                   className="w-full bg-zinc-900/50 border border-zinc-700 p-4 rounded-xl text-white focus:border-orange-500 outline-none text-base"
                   required
+                  // AQUÍ ESTÁ EL PLACEHOLDER PARA EDITAR
+                  placeholder="Ejemplo: Obi-Wan Kenobi"
                 />
               </div>
               <div>
@@ -520,6 +543,8 @@ export default function UsuariosPage() {
                   onChange={(e) => setEditEmail(e.target.value)}
                   className="w-full bg-zinc-900/50 border border-zinc-700 p-4 rounded-xl text-white focus:border-orange-500 outline-none text-base"
                   required
+                  // AQUÍ ESTÁ EL PLACEHOLDER PARA EDITAR
+                  placeholder="nombre@estilo26.com"
                 />
               </div>
               <div>
