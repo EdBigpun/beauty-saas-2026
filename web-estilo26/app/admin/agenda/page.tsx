@@ -302,7 +302,8 @@ export default function AgendaPage() {
           <div className="flex items-center gap-4">
             <button
               onClick={() => router.push('/admin')}
-              className="w-12 h-12 bg-[#4BE6CB]/10 border border-[#4BE6CB]/30 rounded-full flex items-center justify-center hover:bg-[#4BE6CB]/20 transition-all shadow-[0_0_15px_rgba(75,230,203,0.1)]"
+              // [UI FIX]: Inyectado cursor-pointer, active:scale-95 y reforzado el hover
+              className="w-12 h-12 bg-[#4BE6CB]/10 border border-[#4BE6CB]/30 rounded-full flex items-center justify-center hover:bg-[#4BE6CB]/20 transition-all shadow-[0_0_15px_rgba(75,230,203,0.1)] cursor-pointer active:scale-95"
             >
               <ArrowLeft className="w-6 h-6 text-[#4BE6CB]" />
             </button>
@@ -317,7 +318,8 @@ export default function AgendaPage() {
           </div>
           <button
             onClick={() => openModalWithTime()}
-            className="flex items-center gap-2 px-6 py-3 bg-[#4BE6CB] text-black rounded-xl font-bold uppercase tracking-widest text-sm hover:bg-[#3bc4ac] hover:scale-105 active:scale-95 transition-all shadow-[0_0_15px_rgba(75,230,203,0.3)]"
+            // [UI FIX]: cursor-pointer y feedback activo para el botón principal
+            className="flex items-center gap-2 px-6 py-3 bg-[#4BE6CB] text-black rounded-xl font-bold uppercase tracking-widest text-sm hover:bg-[#3bc4ac] hover:scale-105 active:scale-95 transition-all shadow-[0_0_15px_rgba(75,230,203,0.3)] cursor-pointer"
           >
             <Plus className="w-5 h-5" /> Nueva Cita
           </button>
@@ -328,7 +330,8 @@ export default function AgendaPage() {
           <div className="flex items-center gap-4">
             <button
               onClick={prevDay}
-              className="p-2 hover:bg-[#4BE6CB]/10 rounded-lg transition-colors border border-zinc-700 hover:border-[#4BE6CB]/50 group"
+              // [UI FIX]: Inyectado cursor-pointer y active:scale-95
+              className="p-2 hover:bg-[#4BE6CB]/10 rounded-lg transition-colors border border-zinc-700 hover:border-[#4BE6CB]/50 group cursor-pointer active:scale-95"
             >
               <ChevronLeft className="w-5 h-5 text-zinc-300 group-hover:text-[#4BE6CB]" />
             </button>
@@ -340,13 +343,15 @@ export default function AgendaPage() {
             </div>
             <button
               onClick={nextDay}
-              className="p-2 hover:bg-[#4BE6CB]/10 rounded-lg transition-colors border border-zinc-700 hover:border-[#4BE6CB]/50 group"
+              // [UI FIX]: Inyectado cursor-pointer y active:scale-95
+              className="p-2 hover:bg-[#4BE6CB]/10 rounded-lg transition-colors border border-zinc-700 hover:border-[#4BE6CB]/50 group cursor-pointer active:scale-95"
             >
               <ChevronRight className="w-5 h-5 text-zinc-300 group-hover:text-[#4BE6CB]" />
             </button>
             <button
               onClick={goToToday}
-              className="ml-2 px-4 py-2 bg-zinc-800 hover:bg-[#4BE6CB]/20 hover:text-[#4BE6CB] text-zinc-300 rounded-lg text-sm font-bold uppercase tracking-wider transition-colors"
+              // [UI FIX]: Inyectado cursor-pointer, active:scale-95 y hover:bg-zinc-700 para consistencia
+              className="ml-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 hover:text-[#4BE6CB] text-zinc-300 rounded-lg text-sm font-bold uppercase tracking-wider transition-colors cursor-pointer active:scale-95"
             >
               Hoy
             </button>
@@ -359,7 +364,8 @@ export default function AgendaPage() {
             <div className="relative z-40">
               <button
                 onClick={() => setIsMainDropdownOpen(!isMainDropdownOpen)}
-                className="flex items-center justify-between w-full md:w-72 bg-zinc-900 border border-zinc-700 py-2.5 px-4 rounded-lg text-white outline-none text-sm font-bold hover:bg-zinc-800 hover:border-[#4BE6CB]/50 transition-colors"
+                // [UI FIX]: El botón del dropdown central ahora tiene el estándar de interacción (cursor, active).
+                className="flex items-center justify-between w-full md:w-72 bg-zinc-900 border border-zinc-700 py-2.5 px-4 rounded-lg text-white outline-none text-sm font-bold hover:bg-zinc-800 hover:border-[#4BE6CB]/50 transition-colors cursor-pointer active:scale-[0.98]"
               >
                 <div className="flex items-center gap-2 truncate">
                   <Users className="w-4 h-4 text-[#4BE6CB] shrink-0" />
@@ -374,7 +380,8 @@ export default function AgendaPage() {
                       setSelectedMainBarberId('ALL')
                       setIsMainDropdownOpen(false)
                     }}
-                    className="flex items-center gap-3 w-full text-left px-4 py-3 text-sm font-bold text-zinc-300 hover:bg-[#4BE6CB]/10 hover:text-white transition-colors border-b border-zinc-800"
+                    // [UI FIX]: Los ítems de la lista ahora tienen cursor-pointer explícito.
+                    className="flex items-center gap-3 w-full text-left px-4 py-3 text-sm font-bold text-zinc-300 hover:bg-[#4BE6CB]/10 hover:text-white transition-colors border-b border-zinc-800 cursor-pointer"
                   >
                     <Users className="w-4 h-4 text-[#4BE6CB]" /> Todo el Local
                     (Vista Global)
@@ -386,7 +393,8 @@ export default function AgendaPage() {
                         setSelectedMainBarberId(emp.id.toString())
                         setIsMainDropdownOpen(false)
                       }}
-                      className="flex items-center gap-3 w-full text-left px-4 py-3 text-sm font-bold text-zinc-300 hover:bg-[#4BE6CB]/10 hover:text-white transition-colors border-b border-zinc-800 last:border-0"
+                      // [UI FIX]: cursor-pointer en cada barbero de la lista.
+                      className="flex items-center gap-3 w-full text-left px-4 py-3 text-sm font-bold text-zinc-300 hover:bg-[#4BE6CB]/10 hover:text-white transition-colors border-b border-zinc-800 last:border-0 cursor-pointer"
                     >
                       <Scissors className="w-4 h-4 text-[#4BE6CB]" />{' '}
                       {emp.username}
@@ -433,6 +441,7 @@ export default function AgendaPage() {
                     {/* Al hacer clic en una fila vacía, abrimos el modal pasándole esa hora */}
                     <div
                       onClick={() => openModalWithTime(slot.militar)}
+                      // [UI FIX]: Verificación de 'cursor-pointer'. La fila vacía ya tiene un hover sutil y permite interacción.
                       className="flex-1 border-l border-white/5 relative h-12 hover:bg-[#4BE6CB]/[0.02] transition-colors cursor-pointer group"
                     >
                       <div className="absolute inset-0 flex items-center px-4 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -458,7 +467,8 @@ export default function AgendaPage() {
                   <div
                     key={cita.id}
                     // Estilos de la tarjeta: Color esmeralda, bordes redondeados, sombra brillante
-                    className="absolute bg-[#4BE6CB] text-black rounded-lg p-3 border border-[#3bc4ac] overflow-hidden shadow-[0_10px_30px_rgba(75,230,203,0.15)] z-30 flex flex-col justify-center animate-in fade-in slide-in-from-bottom-2 duration-300 hover:scale-[1.01] transition-transform cursor-pointer"
+                    // [UI FIX]: Elevación al pasar el mouse de hover:scale-[1.01] a hover:scale-[1.02] para coincidir con la plantilla maestra, y hover:shadow-2xl añadido.
+                    className="absolute bg-[#4BE6CB] text-black rounded-lg p-3 border border-[#3bc4ac] overflow-hidden shadow-[0_10px_30px_rgba(75,230,203,0.15)] z-30 flex flex-col justify-center animate-in fade-in slide-in-from-bottom-2 duration-300 hover:scale-[1.02] hover:shadow-2xl transition-all cursor-pointer"
                     style={{
                       top,
                       height,
@@ -503,7 +513,8 @@ export default function AgendaPage() {
               </h2>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="p-2 hover:bg-white/10 rounded-full transition-colors text-zinc-400 hover:text-white"
+                // [UI FIX]: Inyectado cursor-pointer al botón de cerrar "X".
+                className="p-2 hover:bg-white/10 rounded-full transition-colors text-zinc-400 hover:text-white cursor-pointer active:scale-95"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -546,7 +557,8 @@ export default function AgendaPage() {
                     setIsBarberDropdownOpen(false)
                     setIsTimeDropdownOpen(false)
                   }}
-                  className="w-full bg-zinc-900/80 border border-[#4BE6CB]/30 p-3.5 rounded-xl text-white outline-none text-sm font-bold flex justify-between items-center hover:bg-zinc-800 transition-colors"
+                  // [UI FIX]: cursor-pointer y active:scale-[0.98] para el selector de servicio dentro del modal.
+                  className="w-full bg-zinc-900/80 border border-[#4BE6CB]/30 p-3.5 rounded-xl text-white outline-none text-sm font-bold flex justify-between items-center hover:bg-zinc-800 transition-colors cursor-pointer active:scale-[0.98]"
                 >
                   <span
                     className={selectedService ? 'text-white' : 'text-zinc-500'}
@@ -572,7 +584,8 @@ export default function AgendaPage() {
                             setFormServiceId(srv.id.toString())
                             setIsServiceDropdownOpen(false)
                           }}
-                          className="w-full text-left px-4 py-3 text-sm font-bold text-zinc-300 hover:bg-[#4BE6CB]/10 hover:text-white transition-colors border-b border-zinc-800 last:border-0 flex justify-between items-center"
+                          // [UI FIX]: cursor-pointer explícito.
+                          className="w-full text-left px-4 py-3 text-sm font-bold text-zinc-300 hover:bg-[#4BE6CB]/10 hover:text-white transition-colors border-b border-zinc-800 last:border-0 flex justify-between items-center cursor-pointer"
                         >
                           <span>
                             {srv.name}{' '}
@@ -601,7 +614,8 @@ export default function AgendaPage() {
                       setIsServiceDropdownOpen(false)
                       setIsTimeDropdownOpen(false)
                     }}
-                    className="w-full bg-zinc-900/50 border border-zinc-700 p-3.5 rounded-xl text-white outline-none text-sm font-bold flex justify-between items-center hover:bg-zinc-800 hover:border-[#4BE6CB]/50 transition-colors"
+                    // [UI FIX]: cursor-pointer y active:scale-[0.98] para el selector de barbero.
+                    className="w-full bg-zinc-900/50 border border-zinc-700 p-3.5 rounded-xl text-white outline-none text-sm font-bold flex justify-between items-center hover:bg-zinc-800 hover:border-[#4BE6CB]/50 transition-colors cursor-pointer active:scale-[0.98]"
                   >
                     <span
                       className={
@@ -624,7 +638,8 @@ export default function AgendaPage() {
                             setFormEmployeeId(emp.id.toString())
                             setIsBarberDropdownOpen(false)
                           }}
-                          className="w-full text-left px-4 py-3 text-sm font-bold text-zinc-300 hover:bg-[#4BE6CB]/10 hover:text-white transition-colors border-b border-zinc-800 last:border-0 flex items-center gap-2"
+                          // [UI FIX]: cursor-pointer explícito.
+                          className="w-full text-left px-4 py-3 text-sm font-bold text-zinc-300 hover:bg-[#4BE6CB]/10 hover:text-white transition-colors border-b border-zinc-800 last:border-0 flex items-center gap-2 cursor-pointer"
                         >
                           <Scissors className="w-4 h-4 text-[#4BE6CB]" />{' '}
                           {emp.username}
@@ -644,7 +659,8 @@ export default function AgendaPage() {
                       setIsServiceDropdownOpen(false)
                       setIsBarberDropdownOpen(false)
                     }}
-                    className="w-full bg-zinc-900/50 border border-zinc-700 p-3.5 rounded-xl text-white outline-none text-sm font-bold flex justify-between items-center hover:bg-zinc-800 hover:border-[#4BE6CB]/50 transition-colors"
+                    // [UI FIX]: cursor-pointer y active:scale-[0.98] para el selector de hora.
+                    className="w-full bg-zinc-900/50 border border-zinc-700 p-3.5 rounded-xl text-white outline-none text-sm font-bold flex justify-between items-center hover:bg-zinc-800 hover:border-[#4BE6CB]/50 transition-colors cursor-pointer active:scale-[0.98]"
                   >
                     <span className={formTime ? 'text-white' : 'text-zinc-500'}>
                       {selectedTimeDisplay}
@@ -661,7 +677,8 @@ export default function AgendaPage() {
                             setFormTime(slot.militar)
                             setIsTimeDropdownOpen(false)
                           }}
-                          className="w-full text-left px-4 py-3 text-sm font-bold text-zinc-300 hover:bg-[#4BE6CB]/10 hover:text-white transition-colors border-b border-zinc-800 last:border-0 flex items-center justify-between"
+                          // [UI FIX]: cursor-pointer explícito.
+                          className="w-full text-left px-4 py-3 text-sm font-bold text-zinc-300 hover:bg-[#4BE6CB]/10 hover:text-white transition-colors border-b border-zinc-800 last:border-0 flex items-center justify-between cursor-pointer"
                         >
                           {slot.display}
                           {formTime === slot.militar && (
@@ -677,13 +694,15 @@ export default function AgendaPage() {
             <div className="p-6 border-t border-white/10 bg-black/50 flex gap-4 mt-2">
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="flex-1 py-3 text-zinc-400 font-bold uppercase text-sm hover:bg-white/5 rounded-xl transition-colors border border-transparent hover:border-white/10"
+                // [UI FIX]: Añadido cursor-pointer, active:scale-95 y un hover:bg-zinc-800 para visibilidad del botón Cancelar.
+                className="flex-1 py-3 text-zinc-400 font-bold uppercase text-sm hover:bg-zinc-800 rounded-xl transition-colors border border-transparent hover:border-white/10 cursor-pointer active:scale-95"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleGuardarCita}
-                className="flex-1 py-3 bg-[#4BE6CB] text-black font-bold uppercase text-sm rounded-xl hover:bg-[#3bc4ac] hover:scale-[1.02] active:scale-95 transition-all shadow-[0_0_15px_rgba(75,230,203,0.2)]"
+                // [UI FIX]: Mantenido el diseño y añadidos cursor-pointer y active:scale-95 (hundimiento natural). El hover ya tenía su scale-[1.02].
+                className="flex-1 py-3 bg-[#4BE6CB] text-black font-bold uppercase text-sm rounded-xl hover:bg-[#3bc4ac] hover:scale-[1.02] active:scale-95 transition-all shadow-[0_0_15px_rgba(75,230,203,0.2)] cursor-pointer"
               >
                 Guardar Cita
               </button>

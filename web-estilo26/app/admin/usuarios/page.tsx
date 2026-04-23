@@ -286,7 +286,8 @@ export default function UsuariosPage() {
         <div className="flex items-center gap-4 mb-10 pb-6 border-b border-gray-800">
           <button
             onClick={() => router.push('/admin')}
-            className="w-12 h-12 bg-white/5 border border-white/10 rounded-full flex items-center justify-center hover:bg-white/10 hover:text-white transition-colors"
+            // [UI FIX]: Añadido 'cursor-pointer', reforzado color al pasar el mouse ('hover:bg-white/20'), y retroalimentación de clic ('active:scale-95').
+            className="w-12 h-12 bg-white/5 border border-white/10 rounded-full flex items-center justify-center hover:bg-white/20 hover:text-white transition-colors cursor-pointer active:scale-95"
           >
             <ArrowLeft className="w-6 h-6 text-zinc-300" />
           </button>
@@ -315,8 +316,8 @@ export default function UsuariosPage() {
               return (
                 <div
                   key={u.id}
-                  // Tarjeta con borde sutil y efecto hover de elevación (-translate-y-1)
-                  className="bg-white/5 border border-white/10 p-6 rounded-2xl hover:bg-white/10 hover:-translate-y-1 transition-all shadow-lg group relative overflow-hidden flex flex-col"
+                  // [UI FIX]: Se mantuvo tu estructura intacta y el efecto de elevación (hover:-translate-y-1). Se le sumó el cambio de tamaño ligero (hover:scale-[1.02]) y la sombra (hover:shadow-xl).
+                  className="bg-white/5 border border-white/10 p-6 rounded-2xl hover:bg-white/10 hover:-translate-y-1 hover:scale-[1.02] hover:shadow-xl transition-all shadow-lg group relative overflow-hidden flex flex-col"
                   style={{ minHeight: '300px' }}
                 >
                   {/* Brillo de fondo restaurado (Púrpura para Admin, Azul para otros) */}
@@ -358,13 +359,15 @@ export default function UsuariosPage() {
                     <div className="flex gap-3 mt-auto pt-6 border-t border-white/5 relative z-10">
                       <button
                         onClick={() => openEditModal(u)}
-                        className="flex-1 flex items-center justify-center gap-2 py-3 bg-zinc-800 hover:bg-zinc-700 rounded-xl text-zinc-300 hover:text-white transition-colors text-sm font-bold tracking-widest uppercase"
+                        // [UI FIX]: Se añadió cursor-pointer, se aclaró el color al pasar el mouse (hover:bg-zinc-600) y se agregó el hundimiento al clicar (active:scale-95).
+                        className="flex-1 flex items-center justify-center gap-2 py-3 bg-zinc-800 hover:bg-zinc-600 rounded-xl text-zinc-300 hover:text-white transition-colors text-sm font-bold tracking-widest uppercase cursor-pointer active:scale-95"
                       >
                         Editar <Pencil className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(u.id)}
-                        className="flex-1 flex items-center justify-center gap-2 py-3 bg-red-900/10 border border-red-900/30 rounded-xl text-red-400 hover:text-red-300 hover:bg-red-900/30 transition-colors text-sm font-bold tracking-widest uppercase"
+                        // [UI FIX]: Se añadió cursor-pointer. Se configuró un hover fuerte de alerta (hover:bg-red-700) para evitar clicks accidentales y el hundimiento (active:scale-95).
+                        className="flex-1 flex items-center justify-center gap-2 py-3 bg-red-900/10 border border-red-900/30 rounded-xl text-red-400 hover:text-white hover:bg-red-700 transition-colors text-sm font-bold tracking-widest uppercase cursor-pointer active:scale-95"
                       >
                         Eliminar <Trash2 className="w-4 h-4" />
                       </button>
@@ -378,7 +381,8 @@ export default function UsuariosPage() {
             {isSuperUser && (
               <div
                 onClick={() => setIsModalOpen(true)}
-                className="border-2 border-dashed border-white/10 rounded-2xl flex flex-col items-center justify-center gap-4 text-zinc-500 hover:border-[#4BE6CB] hover:text-[#4BE6CB] cursor-pointer transition-all hover:bg-[#4BE6CB]/5 group"
+                // [UI FIX]: Mantiene la estructura de tarjeta punteada pero suma cursor-pointer, elevación y cambio de tamaño coordinado con las otras tarjetas, más el efecto click.
+                className="border-2 border-dashed border-white/10 rounded-2xl flex flex-col items-center justify-center gap-4 text-zinc-500 hover:border-[#4BE6CB] hover:text-[#4BE6CB] cursor-pointer transition-all hover:bg-[#4BE6CB]/10 hover:-translate-y-1 hover:scale-[1.02] hover:shadow-xl group active:scale-95"
                 style={{ minHeight: '300px' }}
               >
                 <div className="w-16 h-16 rounded-full border border-white/10 flex items-center justify-center bg-white/5 group-hover:scale-110 transition-transform">
@@ -418,7 +422,6 @@ export default function UsuariosPage() {
                   onChange={(e) => setNewUser(e.target.value)}
                   className="w-full bg-zinc-900/50 border border-zinc-700 p-4 rounded-xl text-white focus:border-[#4BE6CB] outline-none text-base"
                   required
-                  // AQUÍ ESTÁ EL PLACEHOLDER QUE PEDISTE PARA CREAR
                   placeholder="Ejemplo: Obi-Wan Kenobi"
                 />
               </div>
@@ -432,7 +435,6 @@ export default function UsuariosPage() {
                   onChange={(e) => setNewEmail(e.target.value)}
                   className="w-full bg-zinc-900/50 border border-zinc-700 p-4 rounded-xl text-white focus:border-[#4BE6CB] outline-none text-base"
                   required
-                  // AQUÍ ESTÁ EL PLACEHOLDER QUE PEDISTE PARA CREAR
                   placeholder="nombre@estilo26.com"
                 />
               </div>
@@ -452,7 +454,8 @@ export default function UsuariosPage() {
                   <button
                     type="button"
                     onClick={() => setShowPass(!showPass)}
-                    className="absolute right-0 top-0 h-full px-4 text-zinc-500"
+                    // [UI FIX]: Cursor añadido. Color de hover reforzado a text-white y bg-white/10 para hacerlo altamente interactivo.
+                    className="absolute right-0 top-0 h-full px-4 text-zinc-500 cursor-pointer hover:bg-white/10 hover:text-white transition-colors rounded-r-xl"
                   >
                     {showPass ? (
                       <EyeOff className="w-5 h-5" />
@@ -475,7 +478,8 @@ export default function UsuariosPage() {
                 <select
                   value={newRole}
                   onChange={(e) => setNewRole(e.target.value)}
-                  className="w-full bg-zinc-900/50 border border-zinc-700 p-4 rounded-xl text-white focus:border-[#4BE6CB] outline-none text-sm font-bold tracking-widest uppercase"
+                  // [UI FIX]: Añadido cursor-pointer y un ligero cambio de color de fondo al pasar el mouse (hover:bg-zinc-800).
+                  className="w-full bg-zinc-900/50 border border-zinc-700 p-4 rounded-xl text-white focus:border-[#4BE6CB] hover:bg-zinc-800 transition-colors outline-none text-sm font-bold tracking-widest uppercase cursor-pointer"
                 >
                   <option value="ADMIN">Administrador / Dueño</option>
                   <option value="MANAGER">Recepcionista / Gestor</option>
@@ -488,13 +492,15 @@ export default function UsuariosPage() {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="flex-1 py-4 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl font-bold uppercase tracking-widest text-sm transition-colors"
+                  // [UI FIX]: cursor-pointer, color de hover claro (hover:bg-zinc-600) y efecto hundido al hacer clic (active:scale-95).
+                  className="flex-1 py-4 bg-zinc-800 hover:bg-zinc-600 text-white rounded-xl font-bold uppercase tracking-widest text-sm transition-colors cursor-pointer active:scale-95"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-4 bg-[#4BE6CB] hover:bg-[#3bc4ac] text-black rounded-xl font-black uppercase tracking-widest text-sm transition-all shadow-[0_0_20px_rgba(75,230,203,0.3)]"
+                  // [UI FIX]: cursor-pointer, color de hover más oscuro (hover:bg-[#2fa893]) para dar dinamismo y efecto de click.
+                  className="flex-1 py-4 bg-[#4BE6CB] hover:bg-[#2fa893] text-black rounded-xl font-black uppercase tracking-widest text-sm transition-all shadow-[0_0_20px_rgba(75,230,203,0.3)] cursor-pointer active:scale-95"
                 >
                   Crear Usuario
                 </button>
@@ -529,8 +535,6 @@ export default function UsuariosPage() {
                   onChange={(e) => setEditUser(e.target.value)}
                   className="w-full bg-zinc-900/50 border border-zinc-700 p-4 rounded-xl text-white focus:border-orange-500 outline-none text-base"
                   required
-                  // AQUÍ ESTÁ EL PLACEHOLDER PARA EDITAR
-                  placeholder="Ejemplo: Obi-Wan Kenobi"
                 />
               </div>
               <div>
@@ -543,8 +547,6 @@ export default function UsuariosPage() {
                   onChange={(e) => setEditEmail(e.target.value)}
                   className="w-full bg-zinc-900/50 border border-zinc-700 p-4 rounded-xl text-white focus:border-orange-500 outline-none text-base"
                   required
-                  // AQUÍ ESTÁ EL PLACEHOLDER PARA EDITAR
-                  placeholder="nombre@estilo26.com"
                 />
               </div>
               <div>
@@ -554,7 +556,8 @@ export default function UsuariosPage() {
                 <select
                   value={editRole}
                   onChange={(e) => setEditRole(e.target.value)}
-                  className="w-full bg-zinc-900/50 border border-zinc-700 p-4 rounded-xl text-white focus:border-orange-500 outline-none text-sm font-bold tracking-widest uppercase"
+                  // [UI FIX]: cursor-pointer y hover:bg-zinc-800.
+                  className="w-full bg-zinc-900/50 border border-zinc-700 p-4 rounded-xl text-white focus:border-orange-500 hover:bg-zinc-800 transition-colors outline-none text-sm font-bold tracking-widest uppercase cursor-pointer"
                 >
                   <option value="ADMIN">Administrador / Dueño</option>
                   <option value="MANAGER">Recepcionista / Gestor</option>
@@ -581,7 +584,8 @@ export default function UsuariosPage() {
                   <button
                     type="button"
                     onClick={() => setShowEditPass(!showEditPass)}
-                    className="absolute right-0 top-0 h-full px-4 text-zinc-500 hover:text-orange-400"
+                    // [UI FIX]: cursor-pointer e iluminación al pasar el mouse por el ojo (hover:bg-white/10).
+                    className="absolute right-0 top-0 h-full px-4 text-zinc-500 hover:text-orange-400 cursor-pointer hover:bg-white/10 transition-colors rounded-r-xl"
                   >
                     {showEditPass ? (
                       <EyeOff className="w-5 h-5" />
@@ -604,13 +608,15 @@ export default function UsuariosPage() {
                 <button
                   type="button"
                   onClick={() => setIsEditModalOpen(false)}
-                  className="flex-1 py-4 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl font-bold uppercase tracking-widest text-sm transition-colors"
+                  // [UI FIX]: Añadido cursor-pointer, color claro en hover, hundimiento en clic.
+                  className="flex-1 py-4 bg-zinc-800 hover:bg-zinc-600 text-white rounded-xl font-bold uppercase tracking-widest text-sm transition-colors cursor-pointer active:scale-95"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-4 bg-orange-500 hover:bg-orange-400 text-black rounded-xl font-black uppercase tracking-widest text-sm transition-all shadow-[0_0_20px_rgba(251,146,60,0.3)]"
+                  // [UI FIX]: Añadido cursor-pointer, color de hover naranja oscuro y hundimiento.
+                  className="flex-1 py-4 bg-orange-500 hover:bg-orange-600 text-black rounded-xl font-black uppercase tracking-widest text-sm transition-all shadow-[0_0_20px_rgba(251,146,60,0.3)] cursor-pointer active:scale-95"
                 >
                   Guardar Cambios
                 </button>
