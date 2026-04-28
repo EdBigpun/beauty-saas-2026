@@ -6,6 +6,10 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+// [FIX IDE]: Esta es la importación que seguramente faltaba y puso todo en rojo.
+// Necesaria para manejar dinero (BigDecimal).
+import java.math.BigDecimal;
+
 /**
  * -------------------------------------------------------------
  * Entidad User (Usuario del SaaS)
@@ -14,7 +18,6 @@ import lombok.NoArgsConstructor;
  */
 @Entity
 @Table(name = "users")
-// Lombok: Genera getters, setters, constructores y patrón Builder
 @Data
 @Builder
 @NoArgsConstructor
@@ -29,19 +32,26 @@ public class User {
     private String username;
 
     @Column(nullable = false)
-    private String password; // Se guardará encriptada con BCrypt en el futuro
+    private String password;
 
     @Column(unique = true)
     private String email;
 
-    // Los roles ahora soportan la expansión del SaaS (ADMIN, MANAGER, BARBERO, etc.)
     @Column(nullable = false)
     private String role;
 
-    // --- NUEVO: ESTRATEGIA DE SOFT DELETE (BORRADO LÓGICO) ---
-    // En lugar de borrar de la DB, lo marcaremos como "inactivo".
-    // Esto previene que se rompan estadísticas financieras pasadas si despedimos a un barbero.
+    // --- ESTRATEGIA DE SOFT DELETE (BORRADO LÓGICO) ---
     @Builder.Default
     @Column(nullable = false)
     private Boolean isActive = true;
+
+    // ==========================================
+    // NUEVO FASE 2: MOTOR DE NÓMINA (PAYROLL)
+    // ==========================================
+    // [FIX BD]: Se ha eliminado "nullable = false".
+    // Esto permite a PostgreSQL crear la columna sin colapsar por los usuarios
+    // que ya existen en tu base de datos y que tendrán este campo vacío inicialmente.
+    @Builder.Default
+    @Column(precision = 5, scale = 2)
+    private BigDecimal commissionPercentage = new BigDecimal("50.00");
 }

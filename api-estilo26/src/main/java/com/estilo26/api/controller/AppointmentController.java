@@ -5,6 +5,8 @@ import com.estilo26.api.service.AppointmentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -15,13 +17,13 @@ public class AppointmentController {
     @Autowired
     private AppointmentService appointmentService;
 
-    // 1. GET: VER TODAS LAS CITAS (¡Esto es lo que faltaba!)
+    // 1. GET: VER TODAS LAS CITAS
     @GetMapping
     public List<Appointment> getAllAppointments() {
         return appointmentService.getAllAppointments();
     }
 
-    // 2. POST: CREAR CITA
+    // 2. POST: CREAR CITA (Ahora soporta isWalkIn si lo mandas desde React)
     @PostMapping
     public ResponseEntity<?> createAppointment(@RequestBody Appointment appointment) {
         try {
@@ -34,25 +36,36 @@ public class AppointmentController {
         }
     }
 
-    // --- NUEVO ENDPOINT: PUT (Actualizar) ---
-    // La URL será: /api/appointments/{id}/status?status=COMPLETADA
+    // ========================================================================
+    // 3. PUT: ACTUALIZAR ESTADO Y HACER CHECKOUT (ARQUEO)
+    // ========================================================================
+    // Mantenemos el endpoint original, pero lo potenciamos.
+    // React podrá mandar parámetros opcionales para los pagos:
+    // /api/appointments/{id}/status?status=COMPLETADA&paymentMethod=EFECTIVO&discount=0&tip=50
     @PutMapping("/{id}/status")
     public ResponseEntity<?> updateAppointmentStatus(
-            @PathVariable Long id,      // Toma el ID de la URL
-            @RequestParam String status // Toma el estado de los parámetros (?status=...)
+            @PathVariable Long id,
+            @RequestParam String status,
+            // (Opcional) Si React no los manda, el backend no colapsa y asume CERO.
+            @RequestParam(required = false) String paymentMethod,
+            @RequestParam(required = false) BigDecimal discount,
+            @RequestParam(required = false) BigDecimal tip
     ) {
         try {
-            Appointment updatedAppointment = appointmentService.updateStatus(id, status);
-            return ResponseEntity.ok(updatedAppointment); // Devuelve la cita ya corregida
+            // Llamamos a nuestro nuevo Motor de Checkout en el servicio
+            Appointment updatedAppointment = appointmentService.checkoutAppointment(id, status, paymentMethod, discount, tip);
+            return ResponseEntity.ok(updatedAppointment);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage()); // Error 400 si no existe
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
-    }// --- NUEVO ENDPOINT: PUT /reschedule ---
+    }
+
+    // 4. PUT: REAGENDAR
     @PutMapping("/{id}/reschedule")
     public ResponseEntity<?> reschedule(
             @PathVariable Long id,
-            @RequestParam String date, // Nueva fecha (YYYY-MM-DD)
-            @RequestParam String time  // Nueva hora (HH:mm)
+            @RequestParam String date,
+            @RequestParam String time
     ) {
         try {
             Appointment updated = appointmentService.rescheduleAppointment(id, date, time);
@@ -61,6 +74,4 @@ public class AppointmentController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-
-
 }

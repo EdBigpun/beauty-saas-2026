@@ -38,11 +38,6 @@ public class Appointment {
     private LocalTime appointmentTime;
     private LocalTime endTime;
 
-    // ==========================================
-    // CORRECCIÓN MAGISTRAL AQUÍ:
-    // Cambiamos "boolean" por "Boolean" para que Jackson
-    // no colapse si React no envía este dato.
-    // ==========================================
     @Builder.Default
     @Column(columnDefinition = "boolean default false")
     private Boolean rescheduled = false;
@@ -62,6 +57,7 @@ public class Appointment {
 
     private String barberName;
 
+    // --- BLOQUE FINANCIERO ORIGINAL ---
     @Builder.Default
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal totalServicesCost = BigDecimal.ZERO;
@@ -77,4 +73,24 @@ public class Appointment {
     @Builder.Default
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal finalTotalPaid = BigDecimal.ZERO;
+
+    // ==========================================
+    // NUEVO FASE 2: CONTROL DE CAJA Y COMISIONES
+    // ==========================================
+
+    // [FIX BD]: Sin nullable = false para evitar el PSQLException.
+    @Builder.Default
+    @Column
+    private Boolean isWalkIn = false;
+
+    // [FIX BD]: Sin nullable = false. Enumerador para método de pago.
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    @Column
+    private PaymentMethod paymentMethod = PaymentMethod.PENDIENTE;
+
+    // [FIX BD]: Sin nullable = false. Almacena la comisión histórica inmutable.
+    @Builder.Default
+    @Column(precision = 10, scale = 2)
+    private BigDecimal barberCommission = BigDecimal.ZERO;
 }
