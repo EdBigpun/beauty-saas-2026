@@ -36,12 +36,21 @@ export default function CitasPage() {
   const [error, setError] = useState(false)
   const [filterBarber, setFilterBarber] = useState('TODOS')
 
+  // [TECH LEAD]: Estados originales del modal
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedAppt, setSelectedAppt] = useState<Appointment | null>(null)
-
   const [isRescheduleMode, setIsRescheduleMode] = useState(false)
   const [newDate, setNewDate] = useState('')
   const [newTime, setNewTime] = useState('')
+
+  // ============================================================================
+  // [CLASE MAGISTRAL]: ESTADOS FINANCIEROS (FASE 2)
+  // Añadimos la memoria para la "Caja Registradora".
+  // ============================================================================
+  const [isCheckoutMode, setIsCheckoutMode] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState('EFECTIVO')
+  const [discount, setDiscount] = useState<number>(0)
+  const [tip, setTip] = useState<number>(0)
 
   const formatTime = (timeString: string) => {
     if (!timeString) return ''
@@ -49,8 +58,8 @@ export default function CitasPage() {
     let h = parseInt(hours)
     const m = minutes
     const ampm = h >= 12 ? 'PM' : 'AM'
-    h = h % 12 // OPERADOR RESTAURADO: Convierte 13 en 1
-    h = h ? h : 12 // Si es 0, lo convierte en 12
+    h = h % 12
+    h = h ? h : 12
     return `${h}:${m} ${ampm}`
   }
 
@@ -62,6 +71,37 @@ export default function CitasPage() {
       month: 'long',
       year: 'numeric',
     }).format(date)
+  }
+
+  // ============================================================================
+  // [CLASE MAGISTRAL]: LÓGICA DE TIEMPO (RETRASO DE 15 MINUTOS)
+  // Convierte el String de BD a Objeto Date y compara con la hora actual.
+  // ============================================================================
+  const isOverdue = (app: Appointment) => {
+    if (app.status !== 'PENDIENTE') return false // Solo alertamos si no han llegado
+
+    const appDateTime = new Date(
+      `${app.appointmentDate}T${app.appointmentTime}`,
+    )
+    const now = new Date()
+
+    // getTime() devuelve milisegundos. Lo dividimos entre 60,000 para tener minutos puros.
+    const diffInMinutes = (now.getTime() - appDateTime.getTime()) / 60000
+
+    return diffInMinutes >= 15 // Retorna true si pasaron 15 mins o más
+  }
+
+  // ============================================================================
+  // [CLASE MAGISTRAL]: CALCULADORA EN TIEMPO REAL
+  // Suma el precio de los servicios anidados dentro de la cita seleccionada.
+  // ============================================================================
+  const calcularTotalServicios = () => {
+    if (!selectedAppt) return 0
+    // .reduce() es un bucle elegante de JS que va sumando el valor .price de cada servicio
+    return selectedAppt.services.reduce(
+      (total, servicio) => total + servicio.price,
+      0,
+    )
   }
 
   const fetchAppointments = async () => {
@@ -112,19 +152,25 @@ export default function CitasPage() {
       .catch((err) => console.error(err))
   }, [router])
 
-  // --- ARREGLO JEDI 1: Cambio de 'newStatus' a 'status' ---
+  // ============================================================================
+  // [CLASE MAGISTRAL]: ACTUALIZACIÓN DE ESTADO (CON DATOS FINANCIEROS INYECTADOS)
+  // ============================================================================
   const actualizarEstado = async (id: number, nuevoEstado: string) => {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL
-      const res = await fetch(
-        `${apiUrl}/api/appointments/${id}/status?status=${nuevoEstado}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+      let url = `${apiUrl}/api/appointments/${id}/status?status=${nuevoEstado}`
+
+      // Si la acción es completar, le pegamos los datos del checkout a la URL (Query Params)
+      if (nuevoEstado === 'COMPLETADA') {
+        url += `&paymentMethod=${paymentMethod}&discount=${discount}&tip=${tip}`
+      }
+
+      const res = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      )
+      })
 
       if (res.ok) {
         setAppointments(
@@ -142,7 +188,6 @@ export default function CitasPage() {
     }
   }
 
-  // --- ARREGLO JEDI 2: Cambio de 'newDate/newTime' a 'date/time' ---
   const reagendarCita = async () => {
     if (!selectedAppt || !newDate || !newTime) {
       alert('Debes seleccionar una nueva fecha y hora.')
@@ -170,9 +215,14 @@ export default function CitasPage() {
     }
   }
 
+  // [TECH LEAD]: Al abrir o cerrar el modal, siempre reseteamos el estado financiero.
   const openModal = (app: Appointment) => {
     setSelectedAppt(app)
     setIsRescheduleMode(false)
+    setIsCheckoutMode(false)
+    setPaymentMethod('EFECTIVO')
+    setDiscount(0)
+    setTip(0)
     setNewDate('')
     setNewTime('')
     setIsModalOpen(true)
@@ -182,6 +232,7 @@ export default function CitasPage() {
     setIsModalOpen(false)
     setSelectedAppt(null)
     setIsRescheduleMode(false)
+    setIsCheckoutMode(false)
   }
 
   const citasFiltradas = appointments.filter((app) => {
@@ -241,7 +292,7 @@ export default function CitasPage() {
     return (
       <div
         key={app.id}
-        // [UI FIX]: Estándar de Tarjetas. 'hover:-translate-y-1 hover:scale-[1.01]' y se agudiza la sombra de los bordes con 'hover:border-zinc-600'.
+        // [UI FIX]: Mantenido 100% tu diseño visual.
         className="bg-[#0a0a0a] border border-zinc-800 rounded-3xl overflow-hidden flex flex-col group hover:border-zinc-600 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.01] hover:shadow-2xl cursor-default"
       >
         <div className="px-6 py-4 border-b border-zinc-800/50 flex justify-between items-center bg-black/50">
@@ -256,11 +307,21 @@ export default function CitasPage() {
                 🔄 Reagendado
               </span>
             )}
+
+            {/* ============================================================================ */}
+            {/* [CLASE MAGISTRAL]: ALERTA VISUAL DE 15 MINUTOS */}
+            {/* Aquí verificamos nuestra función isOverdue(). Si es true, dibuja la píldora. */}
+            {/* ============================================================================ */}
+            {isOverdue(app) && (
+              <span className="px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest bg-red-500/10 text-red-500 border border-red-500/20 flex items-center gap-1 animate-pulse">
+                ⚠️ +15 Min
+              </span>
+            )}
           </div>
+
           {app.status === 'PENDIENTE' && (
             <button
               onClick={() => openModal(app)}
-              // [UI FIX]: cursor-pointer y active:scale-95. El hover:text-emerald-400 original se mantiene porque es perfecto.
               className="text-xs font-bold text-zinc-400 hover:text-emerald-400 transition-all uppercase tracking-widest cursor-pointer active:scale-95"
             >
               Gestionar ➔
@@ -297,7 +358,6 @@ export default function CitasPage() {
               Cliente
             </p>
             <p className="text-2xl font-black text-white">{app.clientName}</p>
-            {/* [UI FIX]: El enlace a WhatsApp ya estaba muy bien. Aseguramos cursor-pointer. */}
             <a
               href={`https://wa.me/505${app.clientPhone.replace(/\D/g, '')}`}
               target="_blank"
@@ -347,7 +407,6 @@ export default function CitasPage() {
           <div className="flex items-center gap-4 w-full md:w-auto">
             <button
               onClick={() => router.push('/admin')}
-              // [UI FIX]: Estándar para botón retroceder. flex center, cursor-pointer y active:scale-95.
               className="text-2xl w-12 h-12 flex items-center justify-center bg-zinc-900 border border-zinc-700 rounded-full hover:bg-emerald-500 hover:text-black transition-all cursor-pointer active:scale-95"
             >
               ⬅️
@@ -367,7 +426,6 @@ export default function CitasPage() {
               Filtrar por:
             </label>
             <select
-              // [UI FIX]: cursor-pointer y hover:bg-zinc-800 para indicar que es seleccionable.
               className="bg-zinc-900 border border-zinc-700 text-white px-4 py-3 rounded-xl outline-none focus:border-emerald-500 font-bold uppercase cursor-pointer hover:bg-zinc-800 transition-colors min-w-[200px]"
               value={filterBarber}
               onChange={(e) => setFilterBarber(e.target.value)}
@@ -383,7 +441,6 @@ export default function CitasPage() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-          {/* [UI FIX]: KPI Cards. Se les añade el estándar hover de tarjetas y sombras de sus respectivos colores. */}
           <div className="bg-[#1a1300] border border-amber-900/30 p-6 rounded-2xl flex flex-col items-center justify-center transition-all duration-300 hover:-translate-y-1 hover:scale-[1.02] hover:shadow-[0_10px_25px_rgba(245,158,11,0.15)] cursor-default">
             <span className="text-amber-500 font-black uppercase text-[10px] tracking-widest mb-2">
               Pendientes
@@ -490,11 +547,15 @@ export default function CitasPage() {
           <div className="bg-[#0f0f0f] border border-zinc-800 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden relative">
             <div className="bg-zinc-900/50 p-6 border-b border-zinc-800 flex justify-between items-center">
               <h2 className="text-2xl font-black text-white tracking-tighter">
-                {isRescheduleMode ? '🗓️ Reagendar Cita' : 'Gestionar Cita'}
+                {/* [CLASE MAGISTRAL]: El título del modal cambia dinámicamente según el estado */}
+                {isRescheduleMode
+                  ? '🗓️ Reagendar Cita'
+                  : isCheckoutMode
+                    ? '💰 Cobrar Cita'
+                    : 'Gestionar Cita'}
               </h2>
               <button
                 onClick={closeModal}
-                // [UI FIX]: cursor-pointer y feedback de hundimiento al cerrar.
                 className="text-zinc-500 hover:text-white transition-colors cursor-pointer active:scale-95"
               >
                 <svg
@@ -529,46 +590,102 @@ export default function CitasPage() {
             </div>
 
             <div className="p-6">
-              {!isRescheduleMode ? (
-                <div className="space-y-3">
-                  <button
-                    onClick={() =>
-                      actualizarEstado(selectedAppt.id, 'COMPLETADA')
-                    }
-                    // [UI FIX]: cursor-pointer, active:scale-95. El hover:bg-emerald-500 ya era correcto.
-                    className="w-full py-4 bg-emerald-600 text-black font-black uppercase tracking-widest rounded-xl hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-900/20 cursor-pointer active:scale-95"
-                  >
-                    ✅ Marcar COMPLETADA
-                  </button>
-                  <button
-                    onClick={() => setIsRescheduleMode(true)}
-                    // [UI FIX]: cursor-pointer, active:scale-95.
-                    className="w-full py-4 bg-blue-600 text-white font-black uppercase tracking-widest rounded-xl hover:bg-blue-500 transition-all shadow-lg shadow-blue-900/20 cursor-pointer active:scale-95"
-                  >
-                    🗓️ Reagendar Cita
-                  </button>
-                  <div className="grid grid-cols-2 gap-3 pt-3 border-t border-zinc-800 mt-3">
-                    <button
-                      onClick={() =>
-                        actualizarEstado(selectedAppt.id, 'CANCELADA')
-                      }
-                      // [UI FIX]: cursor-pointer, active:scale-95.
-                      className="py-4 bg-red-900/20 text-red-500 border border-red-900/50 font-bold rounded-xl hover:bg-red-900/40 transition-colors cursor-pointer active:scale-95"
+              {/* ============================================================================ */}
+              {/* [CLASE MAGISTRAL]: RENDERIZADO CONDICIONAL DE RUTAS DEL MODAL              */}
+              {/* Si isCheckoutMode es TRUE, dibuja la registradora.                         */}
+              {/* Si isRescheduleMode es TRUE, dibuja el calendario.                         */}
+              {/* Si ambos son FALSE, dibuja el menú de botones original.                    */}
+              {/* ============================================================================ */}
+
+              {isCheckoutMode ? (
+                <div className="space-y-4">
+                  {/* Total Servicios Calculado en Vivo */}
+                  <div className="flex justify-between items-center pb-2 border-b border-zinc-800">
+                    <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">
+                      Total Servicios
+                    </span>
+                    <span className="text-lg font-black text-white">
+                      C$ {calcularTotalServicios().toFixed(2)}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">
+                        Descuento (C$)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={discount === 0 ? '' : discount}
+                        onChange={(e) => setDiscount(Number(e.target.value))}
+                        className="w-full bg-black border-2 border-zinc-800 p-3 rounded-xl text-white focus:border-emerald-500 outline-none font-bold transition-colors"
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">
+                        Propina (C$)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={tip === 0 ? '' : tip}
+                        onChange={(e) => setTip(Number(e.target.value))}
+                        className="w-full bg-black border-2 border-zinc-800 p-3 rounded-xl text-white focus:border-emerald-500 outline-none font-bold transition-colors"
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">
+                      Método de Pago
+                    </label>
+                    <select
+                      className="w-full bg-black border-2 border-zinc-800 p-3 rounded-xl text-white focus:border-emerald-500 outline-none font-bold appearance-none transition-colors cursor-pointer"
+                      value={paymentMethod}
+                      onChange={(e) => setPaymentMethod(e.target.value)}
                     >
-                      ❌ Cancelar
+                      <option value="EFECTIVO">💵 Efectivo</option>
+                      <option value="TARJETA">💳 Tarjeta (POS)</option>
+                      <option value="TRANSFERENCIA">📱 Transferencia</option>
+                    </select>
+                  </div>
+
+                  {/* Operación Matemática Total Final */}
+                  <div className="bg-emerald-900/10 border border-emerald-900/30 p-4 rounded-xl mt-4 flex justify-between items-center">
+                    <span className="text-sm font-bold text-emerald-500 uppercase tracking-widest">
+                      Total a Cobrar
+                    </span>
+                    <span className="text-2xl font-black text-emerald-400">
+                      C${' '}
+                      {Math.max(
+                        0,
+                        calcularTotalServicios() - discount + tip,
+                      ).toFixed(2)}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 mt-6">
+                    <button
+                      onClick={() => setIsCheckoutMode(false)}
+                      className="py-4 bg-zinc-900 text-zinc-400 font-bold rounded-xl hover:bg-zinc-800 transition-colors cursor-pointer active:scale-95"
+                    >
+                      Atrás
                     </button>
+                    {/* [TECH LEAD]: Dispara actualizarEstado pasando 'COMPLETADA'. Esto forzará la inyección en la URL. */}
                     <button
                       onClick={() =>
-                        actualizarEstado(selectedAppt.id, 'NO_SHOW')
+                        actualizarEstado(selectedAppt.id, 'COMPLETADA')
                       }
-                      // [UI FIX]: cursor-pointer, active:scale-95.
-                      className="py-4 bg-zinc-900 text-orange-500 border border-zinc-700 font-bold rounded-xl hover:bg-zinc-800 transition-colors cursor-pointer active:scale-95"
+                      className="py-4 bg-emerald-600 text-black font-black uppercase tracking-widest rounded-xl hover:bg-emerald-500 shadow-lg shadow-emerald-900/20 transition-all cursor-pointer active:scale-95"
                     >
-                      ⚠️ No Show
+                      Confirmar Pago
                     </button>
                   </div>
                 </div>
-              ) : (
+              ) : isRescheduleMode ? (
                 <div className="space-y-5">
                   <div>
                     <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">
@@ -577,7 +694,6 @@ export default function CitasPage() {
                     <input
                       type="date"
                       style={{ colorScheme: 'dark' }}
-                      // [UI FIX]: cursor-pointer añadido al input de fecha nativo.
                       className="w-full bg-black border-2 border-zinc-800 p-4 rounded-xl text-white focus:border-blue-500 outline-none font-bold transition-colors cursor-pointer"
                       value={newDate}
                       onChange={(e) => setNewDate(e.target.value)}
@@ -588,7 +704,6 @@ export default function CitasPage() {
                       Nueva Hora
                     </label>
                     <select
-                      // [UI FIX]: cursor-pointer añadido.
                       className="w-full bg-black border-2 border-zinc-800 p-4 rounded-xl text-white focus:border-blue-500 outline-none font-bold appearance-none transition-colors cursor-pointer"
                       value={newTime}
                       onChange={(e) => setNewTime(e.target.value)}
@@ -604,17 +719,49 @@ export default function CitasPage() {
                   <div className="grid grid-cols-2 gap-3 mt-8">
                     <button
                       onClick={() => setIsRescheduleMode(false)}
-                      // [UI FIX]: cursor-pointer, active:scale-95.
                       className="py-4 bg-zinc-900 text-zinc-400 font-bold rounded-xl hover:bg-zinc-800 transition-colors cursor-pointer active:scale-95"
                     >
                       Cancelar
                     </button>
                     <button
                       onClick={reagendarCita}
-                      // [UI FIX]: cursor-pointer, active:scale-95 y hover sutilmente más claro (blue-500 a blue-400).
                       className="py-4 bg-blue-600 text-white font-black rounded-xl hover:bg-blue-400 shadow-lg shadow-blue-900/30 transition-all cursor-pointer active:scale-95"
                     >
                       💾 Guardar Cambio
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {/* [TECH LEAD]: El botón modificado. Ya no completa la cita. Ahora abre la vista de Checkout. */}
+                  <button
+                    onClick={() => setIsCheckoutMode(true)}
+                    className="w-full py-4 bg-emerald-600 text-black font-black uppercase tracking-widest rounded-xl hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-900/20 cursor-pointer active:scale-95"
+                  >
+                    💰 Cobrar y Completar
+                  </button>
+                  <button
+                    onClick={() => setIsRescheduleMode(true)}
+                    className="w-full py-4 bg-blue-600 text-white font-black uppercase tracking-widest rounded-xl hover:bg-blue-500 transition-all shadow-lg shadow-blue-900/20 cursor-pointer active:scale-95"
+                  >
+                    🗓️ Reagendar Cita
+                  </button>
+                  <div className="grid grid-cols-2 gap-3 pt-3 border-t border-zinc-800 mt-3">
+                    <button
+                      onClick={() =>
+                        actualizarEstado(selectedAppt.id, 'CANCELADA')
+                      }
+                      className="py-4 bg-red-900/20 text-red-500 border border-red-900/50 font-bold rounded-xl hover:bg-red-900/40 transition-colors cursor-pointer active:scale-95"
+                    >
+                      ❌ Cancelar
+                    </button>
+                    <button
+                      onClick={() =>
+                        actualizarEstado(selectedAppt.id, 'NO_SHOW')
+                      }
+                      className="py-4 bg-zinc-900 text-orange-500 border border-zinc-700 font-bold rounded-xl hover:bg-zinc-800 transition-colors cursor-pointer active:scale-95"
+                    >
+                      ⚠️ No Show
                     </button>
                   </div>
                 </div>
