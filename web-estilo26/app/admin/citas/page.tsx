@@ -241,13 +241,18 @@ export default function CitasPage() {
     return app.barberName === filterBarber
   })
 
+  // 1. PENDIENTES se queda intacto (FIFO - Ascendente), lo más viejo primero.
   const citasPendientes = citasFiltradas.filter((a) => a.status === 'PENDIENTE')
-  const citasCompletadas = citasFiltradas.filter(
-    (a) => a.status === 'COMPLETADA',
-  )
-  const citasHistorial = citasFiltradas.filter(
-    (a) => a.status === 'CANCELADA' || a.status === 'NO_SHOW',
-  )
+
+  // 2. COMPLETADAS: Clonamos con [...] y aplicamos .reverse() (LIFO - Descendente)
+  const citasCompletadas = [...citasFiltradas]
+    .filter((a) => a.status === 'COMPLETADA')
+    .reverse()
+
+  // 3. HISTORIAL: Clonamos e invertimos para ver lo más reciente cancelado arriba
+  const citasHistorial = [...citasFiltradas]
+    .filter((a) => a.status === 'CANCELADA' || a.status === 'NO_SHOW')
+    .reverse()
 
   const getStatusColor = (status: string) => {
     switch (status) {
